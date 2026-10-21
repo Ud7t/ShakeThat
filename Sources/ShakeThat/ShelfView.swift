@@ -47,8 +47,9 @@ final class ShelfView: NSView, NSDraggingSource {
         addSubview(closeButton)
 
         NSLayoutConstraint.activate([
-            closeButton.topAnchor.constraint(equalTo: topAnchor, constant: 8),
-            closeButton.leadingAnchor.constraint(equalTo: leadingAnchor, constant: 8),
+            // Inside the dashed outline (inset 6, corner radius 12) rather than on top of it.
+            closeButton.topAnchor.constraint(equalTo: topAnchor, constant: 14),
+            closeButton.leadingAnchor.constraint(equalTo: leadingAnchor, constant: 14),
 
             fanView.centerXAnchor.constraint(equalTo: centerXAnchor),
             fanView.centerYAnchor.constraint(equalTo: centerYAnchor, constant: -6),
