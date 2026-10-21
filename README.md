@@ -44,6 +44,7 @@ Run the tests with `swift test`.
 | `Sources/ShakeThat/ShelfController.swift` | The floating, non-activating panel and where it appears |
 | `Sources/ShakeThat/ShelfView.swift` | Drop target and drag source for the files on the shelf |
 | `Sources/ShakeThat/AppDelegate.swift` | Menu bar item and wiring |
+| `Resources/Icon/` | App icon: `ShakeThatIcon.svg` is the source, and `AppIcon-1024.png` is the master the build turns into `AppIcon.icns` |
 | `scripts/build-app.sh` | Builds and ad-hoc signs `build/ShakeThat.app` |
 
 ## Roadmap ideas
