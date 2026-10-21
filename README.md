@@ -14,7 +14,7 @@ The destination decides what happens to the files, just as with a normal drag: F
 Other bits:
 
 - Click the menu bar icon for **Show Shelf**, **Clear Shelf**, and **Quit**.
-- Drag an empty shelf by its background to move it.
+- Drag the shelf by its edge or label to move it. Dragging the file cards drags the files out.
 - The x button clears the shelf and hides it. It never deletes files; the shelf only holds references.
 
 ## Requirements

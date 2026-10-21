@@ -16,19 +16,20 @@ final class ShelfView: NSView, NSDraggingSource {
         didSet { needsDisplay = true }
     }
 
-    private let iconView = NSImageView()
+    private let fanView = IconFanView()
+    private let thumbnails = Thumbnails()
     private let label = NSTextField(labelWithString: "")
     private let closeButton = NSButton()
     private var dragStarted = false
+    /// Set on mouse down outside the files: the gesture moves the shelf instead of the files.
+    private var moveStart: (mouse: NSPoint, windowOrigin: NSPoint)?
 
     override init(frame frameRect: NSRect) {
         super.init(frame: frameRect)
         registerForDraggedTypes([.fileURL])
 
-        iconView.imageScaling = .scaleProportionallyUpOrDown
-        iconView.unregisterDraggedTypes() // let drops fall through to this view
-        iconView.translatesAutoresizingMaskIntoConstraints = false
-        addSubview(iconView)
+        fanView.translatesAutoresizingMaskIntoConstraints = false
+        addSubview(fanView)
 
         label.alignment = .center
         label.lineBreakMode = .byTruncatingMiddle
@@ -49,12 +50,12 @@ final class ShelfView: NSView, NSDraggingSource {
             closeButton.topAnchor.constraint(equalTo: topAnchor, constant: 8),
             closeButton.leadingAnchor.constraint(equalTo: leadingAnchor, constant: 8),
 
-            iconView.centerXAnchor.constraint(equalTo: centerXAnchor),
-            iconView.centerYAnchor.constraint(equalTo: centerYAnchor, constant: -8),
-            iconView.widthAnchor.constraint(equalToConstant: 72),
-            iconView.heightAnchor.constraint(equalToConstant: 72),
+            fanView.centerXAnchor.constraint(equalTo: centerXAnchor),
+            fanView.centerYAnchor.constraint(equalTo: centerYAnchor, constant: -6),
+            fanView.widthAnchor.constraint(equalToConstant: 96),
+            fanView.heightAnchor.constraint(equalToConstant: 84),
 
-            label.topAnchor.constraint(equalTo: iconView.bottomAnchor, constant: 8),
+            label.topAnchor.constraint(equalTo: fanView.bottomAnchor, constant: 6),
             label.leadingAnchor.constraint(equalTo: leadingAnchor, constant: 10),
             label.trailingAnchor.constraint(equalTo: trailingAnchor, constant: -10),
         ])
@@ -67,16 +68,29 @@ final class ShelfView: NSView, NSDraggingSource {
         fatalError("init(coder:) has not been implemented")
     }
 
+    /// Tray symbol tinted to match the current appearance (the fan draws images as-is).
+    private static let placeholder: NSImage = {
+        let symbol = NSImage(systemSymbolName: "tray.and.arrow.down", accessibilityDescription: nil) ?? NSImage()
+        let size = NSSize(width: symbol.size.width * 3, height: symbol.size.height * 3)
+        return NSImage(size: size, flipped: false) { rect in
+            symbol.draw(in: rect)
+            NSColor.tertiaryLabelColor.set()
+            rect.fill(using: .sourceAtop)
+            return true
+        }
+    }()
+
     func removeAll() {
+        for url in urls { thumbnails.forget(url) }
         urls.removeAll()
     }
 
     private func refresh() {
         if let first = urls.first {
-            iconView.image = NSWorkspace.shared.icon(forFile: first.path)
+            fanView.images = urls.map { thumbnails.image(for: $0) { [weak self] in self?.refresh() } }
             label.stringValue = urls.count == 1 ? first.lastPathComponent : "\(urls.count) files"
         } else {
-            iconView.image = NSImage(systemSymbolName: "tray.and.arrow.down", accessibilityDescription: nil)
+            fanView.images = [Self.placeholder]
             label.stringValue = "Drop files here"
         }
         needsDisplay = true
@@ -139,22 +153,32 @@ final class ShelfView: NSView, NSDraggingSource {
 
     override func mouseDown(with event: NSEvent) {
         dragStarted = false
-        if urls.isEmpty {
-            // Nothing to drag, so let the user reposition the shelf instead.
-            window?.performDrag(with: event)
+        moveStart = nil
+        let point = convert(event.locationInWindow, from: nil)
+        if urls.isEmpty || !fanView.frame.contains(point), let window {
+            // Grabbing the shelf anywhere except its files moves the shelf.
+            moveStart = (NSEvent.mouseLocation, window.frame.origin)
         }
     }
 
     override func mouseDragged(with event: NSEvent) {
+        if let moveStart, let window {
+            let mouse = NSEvent.mouseLocation
+            window.setFrameOrigin(NSPoint(
+                x: moveStart.windowOrigin.x + mouse.x - moveStart.mouse.x,
+                y: moveStart.windowOrigin.y + mouse.y - moveStart.mouse.y
+            ))
+            return
+        }
         guard !urls.isEmpty, !dragStarted else { return }
         dragStarted = true
 
-        let iconFrame = iconView.frame
+        let cardFrame = fanView.convert(fanView.topCardFrame, to: self)
         let items = urls.enumerated().map { index, url -> NSDraggingItem in
             let item = NSDraggingItem(pasteboardWriter: url as NSURL)
-            // Fan the icons slightly so a multi-file drag looks like a stack.
+            // Offset the images slightly so a multi-file drag looks like a stack.
             let offset = CGFloat(min(index, 4)) * 4
-            item.setDraggingFrame(iconFrame.offsetBy(dx: offset, dy: -offset), contents: NSWorkspace.shared.icon(forFile: url.path))
+            item.setDraggingFrame(cardFrame.offsetBy(dx: offset, dy: -offset), contents: thumbnails.image(for: url) {})
             return item
         }
         let session = beginDraggingSession(with: items, event: event, source: self)
@@ -164,6 +188,7 @@ final class ShelfView: NSView, NSDraggingSource {
 
     override func mouseUp(with event: NSEvent) {
         dragStarted = false
+        moveStart = nil
     }
 
     func draggingSession(_ session: NSDraggingSession, sourceOperationMaskFor context: NSDraggingContext) -> NSDragOperation {
@@ -174,7 +199,7 @@ final class ShelfView: NSView, NSDraggingSource {
     func draggingSession(_ session: NSDraggingSession, endedAt screenPoint: NSPoint, operation: NSDragOperation) {
         dragStarted = false
         guard !operation.isEmpty else { return } // cancelled, keep the files on the shelf
-        urls.removeAll()
+        removeAll()
         onEmptiedByDrag?()
     }
 }
