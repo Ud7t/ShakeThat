@@ -10,6 +10,7 @@ final class ShelfController {
     init() {
         shelfView.onClose = { [weak self] in self?.clear() }
         shelfView.onDraggedOut = { [weak self] in self?.clear() }
+        shelfView.onReplaceFiles = { [weak self] files in self?.replace(with: files) }
     }
 
     /// Shows the shelf centred on `point`, so releasing the mouse right away drops the files.
@@ -39,6 +40,14 @@ final class ShelfController {
         saveToHistory()
         shelfView.removeAll()
         hide()
+    }
+
+    /// Swaps the shelf's files for the result of a quick action.
+    /// The previous files go into the history, so the originals are a click away.
+    func replace(with files: [URL]) {
+        saveToHistory()
+        shelfView.removeAll()
+        shelfView.add(files)
     }
 
     /// Reopens a shelf from the history. Files that no longer exist are skipped.
