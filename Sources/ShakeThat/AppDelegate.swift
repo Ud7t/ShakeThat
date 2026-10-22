@@ -8,7 +8,7 @@ final class AppDelegate: NSObject, NSApplicationDelegate {
 
     func applicationDidFinishLaunching(_ notification: Notification) {
         let item = NSStatusBar.system.statusItem(withLength: NSStatusItem.squareLength)
-        item.button?.image = NSImage(systemSymbolName: "tray.and.arrow.down", accessibilityDescription: "ShakeThat")
+        item.button?.image = MenuBarIcon.make()
         item.menu = makeMenu()
         statusItem = item
 

@@ -8,6 +8,8 @@
 	<string>ShakeThat</string>
 	<key>CFBundleIdentifier</key>
 	<string>io.github.ud7t.ShakeThat</string>
+	<key>CFBundleIconFile</key>
+	<string>AppIcon</string>
 	<key>CFBundleExecutable</key>
 	<string>ShakeThat</string>
 	<key>CFBundlePackageType</key>
