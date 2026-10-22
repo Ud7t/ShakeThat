@@ -1,4 +1,5 @@
 import Foundation
+import ShakeCore
 
 /// The last few shelves that were cleared, kept across relaunches.
 ///
@@ -13,7 +14,6 @@ final class ShelfHistory {
         var names: [String]
     }
 
-    static let limit = 10
     private static let defaultsKey = "ShelfHistory"
 
     private let defaults: UserDefaults
@@ -23,8 +23,13 @@ final class ShelfHistory {
         self.defaults = defaults
         if let data = defaults.data(forKey: Self.defaultsKey),
            let saved = try? JSONDecoder().decode([Entry].self, from: data) {
-            entries = saved
+            entries = Array(saved.prefix(Self.limit))
         }
+    }
+
+    /// `recentShelvesLimit` from the settings file, read each time so hand edits apply without a relaunch.
+    private static var limit: Int {
+        (ShelfSettings.load(from: ShakeSettingsStore.fileURL) ?? .defaults).recentShelvesLimit
     }
 
     static func bookmark(for url: URL) -> Data? {
@@ -35,7 +40,8 @@ final class ShelfHistory {
     func record(bookmarks: [Data], names: [String]) {
         guard !bookmarks.isEmpty else { return }
         entries.insert(Entry(date: Date(), bookmarks: bookmarks, names: names), at: 0)
-        if entries.count > Self.limit { entries.removeLast(entries.count - Self.limit) }
+        let limit = Self.limit
+        if entries.count > limit { entries.removeLast(entries.count - limit) }
         save()
     }
 

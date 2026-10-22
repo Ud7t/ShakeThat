@@ -2,13 +2,15 @@ import AppKit
 import ShakeCore
 import SwiftUI
 
-/// Loads and saves the shake settings file in ~/Library/Application Support/ShakeThat/.
+/// Loads and saves the shake values in the settings file in ~/Library/Application Support/ShakeThat/.
 @MainActor
 final class ShakeSettingsStore: ObservableObject {
-    static let fileURL = FileManager.default
+    private static let folderURL = FileManager.default
         .urls(for: .applicationSupportDirectory, in: .userDomainMask)[0]
         .appendingPathComponent("ShakeThat", isDirectory: true)
-        .appendingPathComponent("shake-settings.json")
+    static let fileURL = folderURL.appendingPathComponent("settings.json")
+    /// The file's name before it held more than shake settings.
+    private static let oldFileURL = folderURL.appendingPathComponent("shake-settings.json")
 
     /// The values last loaded from or saved to the file.
     @Published private(set) var settings = ShakeSettings.defaults
@@ -18,11 +20,19 @@ final class ShakeSettingsStore: ObservableObject {
     /// Reads the file, writing it out with the defaults first if it doesn't exist yet
     /// so there's always a file to open and edit by hand.
     func reload() {
+        let files = FileManager.default
+        if !files.fileExists(atPath: Self.fileURL.path), files.fileExists(atPath: Self.oldFileURL.path) {
+            try? files.moveItem(at: Self.oldFileURL, to: Self.fileURL)
+        }
         if let loaded = ShakeSettings.load(from: Self.fileURL) {
             settings = loaded
-        } else if !FileManager.default.fileExists(atPath: Self.fileURL.path) {
+        } else if !files.fileExists(atPath: Self.fileURL.path) {
             settings = .defaults
             try? settings.save(to: Self.fileURL)
+        }
+        if ShakeSettings.load(from: Self.fileURL) != nil {
+            // Add the hand-edited shelf values to the file so they can be found, keeping any already set.
+            try? SettingsFile.merge(ShelfSettings.defaults, into: Self.fileURL, onlyMissing: true)
         }
         // An unreadable file is left alone (and the previous values kept) rather than overwritten.
         onChange?(settings)

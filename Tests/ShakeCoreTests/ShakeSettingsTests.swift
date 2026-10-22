@@ -7,7 +7,7 @@ final class ShakeSettingsTests: XCTestCase {
     override func setUp() {
         fileURL = FileManager.default.temporaryDirectory
             .appendingPathComponent(UUID().uuidString)
-            .appendingPathComponent("shake-settings.json")
+            .appendingPathComponent("settings.json")
     }
 
     override func tearDown() {
