@@ -23,6 +23,7 @@ final class ShelfView: NSView, NSDraggingSource {
     private let thumbnails = Thumbnails()
     private let label = NSTextField(labelWithString: "")
     private let closeButton = NSButton()
+    private let shareButton = NSButton()
     private var dragStarted = false
     /// Set on mouse down outside the files: the gesture moves the shelf instead of the files.
     private var moveStart: (mouse: NSPoint, windowOrigin: NSPoint)?
@@ -49,10 +50,21 @@ final class ShelfView: NSView, NSDraggingSource {
         closeButton.translatesAutoresizingMaskIntoConstraints = false
         addSubview(closeButton)
 
+        shareButton.image = NSImage(systemSymbolName: "square.and.arrow.up.circle.fill", accessibilityDescription: "Share files")
+        shareButton.isBordered = false
+        shareButton.contentTintColor = .tertiaryLabelColor
+        shareButton.target = self
+        shareButton.action = #selector(shareClicked)
+        shareButton.translatesAutoresizingMaskIntoConstraints = false
+        addSubview(shareButton)
+
         NSLayoutConstraint.activate([
             // Inside the dashed outline (inset 6, corner radius 12) rather than on top of it.
             closeButton.topAnchor.constraint(equalTo: topAnchor, constant: 14),
             closeButton.leadingAnchor.constraint(equalTo: leadingAnchor, constant: 14),
+            // Mirrors the close button in the opposite corner.
+            shareButton.topAnchor.constraint(equalTo: topAnchor, constant: 14),
+            shareButton.trailingAnchor.constraint(equalTo: trailingAnchor, constant: -14),
 
             fanView.centerXAnchor.constraint(equalTo: centerXAnchor),
             fanView.centerYAnchor.constraint(equalTo: centerYAnchor, constant: -6),
@@ -111,11 +123,19 @@ final class ShelfView: NSView, NSDraggingSource {
             fanView.images = [Self.placeholder]
             label.stringValue = "Drop files here"
         }
+        shareButton.isHidden = urls.isEmpty
         needsDisplay = true
     }
 
     @objc private func closeClicked() {
         onClose?()
+    }
+
+    /// Opens the system share sheet (AirDrop, Mail, Messages, ...) for every file on the shelf.
+    @objc private func shareClicked() {
+        guard !urls.isEmpty else { return }
+        let picker = NSSharingServicePicker(items: urls)
+        picker.show(relativeTo: shareButton.bounds, of: shareButton, preferredEdge: .minY)
     }
 
     override func draw(_ dirtyRect: NSRect) {
