@@ -39,7 +39,7 @@ final class ShakeDetectorTests: XCTestCase {
 
     func testSmallWiggleIsIgnored() {
         var detector = ShakeDetector()
-        XCTAssertEqual(feed(&detector, strokes: 10, width: 20, step: 5), 0)
+        XCTAssertEqual(feed(&detector, strokes: 10, width: 12, step: 3), 0)
     }
 
     func testStraightDragWithJitterIsIgnored() {

@@ -12,7 +12,7 @@ public struct ShakeSettings: Codable, Equatable {
     public var cooldown: TimeInterval
 
     public static let defaults = ShakeSettings(
-        minimumTravel: 30,
+        minimumTravel: 20,
         requiredReversals: 4,
         window: 0.8,
         cooldown: 1.0
