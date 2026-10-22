@@ -1,14 +1,14 @@
 import AppKit
 
-/// The menu bar glyph: the cursor and shake lines from the app icon, drawn as a template
+/// The menu bar glyph: the cursor, its two fading trails and the shake lines from the app icon, drawn as a template
 /// image so macOS tints it for light and dark menu bars.
 enum MenuBarIcon {
     static func make() -> NSImage {
         let image = NSImage(size: NSSize(width: 18, height: 18), flipped: true) { rect in
             // Paths are in the app icon's SVG coordinates (Resources/Icon/ShakeThatIcon.svg).
-            // Their combined bounds, including the arcs' stroke width, are about
-            // x 187...441 and y 116...393; scale that to fit 14pt and centre it.
-            let content = NSRect(x: 187, y: 116, width: 254, height: 277)
+            // Their combined bounds, including the trails and the arcs' stroke width, are about
+            // x 126...441 and y 116...409; scale that to fit 14pt and centre it.
+            let content = NSRect(x: 126, y: 116, width: 315, height: 293)
             let scale = 14 / content.height
             let transform = NSAffineTransform()
             transform.translateX(
@@ -18,6 +18,11 @@ enum MenuBarIcon {
             transform.scale(by: scale)
             transform.concat()
 
+            // Trailing cursors first so the main one sits on top, as in the app icon.
+            NSColor.black.withAlphaComponent(0.25).setFill()
+            cursorPath(offsetX: -61, offsetY: 16).fill()
+            NSColor.black.withAlphaComponent(0.45).setFill()
+            cursorPath(offsetX: -31, offsetY: 7).fill()
             NSColor.black.setFill()
             cursorPath().fill()
 
@@ -34,7 +39,7 @@ enum MenuBarIcon {
         return image
     }
 
-    private static func cursorPath() -> NSBezierPath {
+    private static func cursorPath(offsetX: CGFloat = 0, offsetY: CGFloat = 0) -> NSBezierPath {
         let path = NSBezierPath()
         path.move(to: NSPoint(x: 187, y: 135))
         path.line(to: NSPoint(x: 187, y: 345))
@@ -50,6 +55,9 @@ enum MenuBarIcon {
         path.line(to: NSPoint(x: 193, y: 132))
         path.curve(to: NSPoint(x: 187, y: 135), controlPoint1: NSPoint(x: 189, y: 128.667), controlPoint2: NSPoint(x: 187, y: 129.667))
         path.close()
+        if offsetX != 0 || offsetY != 0 {
+            path.transform(using: AffineTransform(translationByX: offsetX, byY: offsetY))
+        }
         return path
     }
 
