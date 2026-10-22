@@ -4,6 +4,9 @@ import ShakeCore
 @MainActor
 final class AppDelegate: NSObject, NSApplicationDelegate {
     private var statusItem: NSStatusItem?
+    private lazy var recentShelves = RecentShelvesMenu(history: shelf.history) { [weak self] index in
+        self?.shelf.restore(historyIndex: index)
+    }
     private let shelf = ShelfController()
     private let shakeMonitor = DragShakeMonitor()
     private let shakeSettings = ShakeSettingsStore()
@@ -29,6 +32,7 @@ final class AppDelegate: NSObject, NSApplicationDelegate {
         let menu = NSMenu()
         menu.addItem(withTitle: "Show Shelf", action: #selector(showShelf), keyEquivalent: "").target = self
         menu.addItem(withTitle: "Clear Shelf", action: #selector(clearShelf), keyEquivalent: "").target = self
+        menu.addItem(recentShelves.item)
         menu.addItem(.separator())
         menu.addItem(withTitle: "Shake Settings…", action: #selector(showShakeSettings), keyEquivalent: ",").target = self
         menu.addItem(.separator())

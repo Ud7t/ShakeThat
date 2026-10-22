@@ -54,13 +54,8 @@ public struct ShakeSettings: Codable, Equatable {
     }
 
     /// Writes settings to `url` as pretty-printed JSON, creating the folder if needed.
+    /// Other keys in the file (such as the shelf settings) are kept.
     public func save(to url: URL) throws {
-        try FileManager.default.createDirectory(
-            at: url.deletingLastPathComponent(),
-            withIntermediateDirectories: true
-        )
-        let encoder = JSONEncoder()
-        encoder.outputFormatting = [.prettyPrinted, .sortedKeys]
-        try encoder.encode(self).write(to: url, options: .atomic)
+        try SettingsFile.merge(self, into: url)
     }
 }

@@ -5,8 +5,8 @@ import AppKit
 final class ShelfView: NSView, NSDraggingSource {
     /// Called when the close button is clicked.
     var onClose: (() -> Void)?
-    /// Called after the files were dragged out somewhere and the shelf is now empty.
-    var onEmptiedByDrag: (() -> Void)?
+    /// Called after the files were dragged out somewhere, while they're still on the shelf.
+    var onDraggedOut: (() -> Void)?
 
     private(set) var urls: [URL] = [] {
         didSet { refresh() }
@@ -15,6 +15,9 @@ final class ShelfView: NSView, NSDraggingSource {
     private var isDropTarget = false {
         didSet { needsDisplay = true }
     }
+
+    /// Bookmarks taken when each file was dropped, so the history can find files that are moved later.
+    private var bookmarks: [URL: Data] = [:]
 
     private let fanView = IconFanView()
     private let thumbnails = Thumbnails()
@@ -81,8 +84,22 @@ final class ShelfView: NSView, NSDraggingSource {
         }
     }()
 
+    /// Bookmarks and names for the files on the shelf, in shelf order.
+    var bookmarkedFiles: [(bookmark: Data, name: String)] {
+        urls.compactMap { url in
+            (bookmarks[url] ?? ShelfHistory.bookmark(for: url)).map { ($0, url.lastPathComponent) }
+        }
+    }
+
+    func add(_ newURLs: [URL]) {
+        let added = newURLs.filter { !urls.contains($0) }
+        for url in added { bookmarks[url] = ShelfHistory.bookmark(for: url) }
+        urls.append(contentsOf: added)
+    }
+
     func removeAll() {
         for url in urls { thumbnails.forget(url) }
+        bookmarks.removeAll()
         urls.removeAll()
     }
 
@@ -136,8 +153,7 @@ final class ShelfView: NSView, NSDraggingSource {
 
     override func performDragOperation(_ sender: NSDraggingInfo) -> Bool {
         isDropTarget = false
-        let dropped = fileURLs(from: sender).filter { !urls.contains($0) }
-        urls.append(contentsOf: dropped)
+        add(fileURLs(from: sender))
         return true
     }
 
@@ -200,7 +216,6 @@ final class ShelfView: NSView, NSDraggingSource {
     func draggingSession(_ session: NSDraggingSession, endedAt screenPoint: NSPoint, operation: NSDragOperation) {
         dragStarted = false
         guard !operation.isEmpty else { return } // cancelled, keep the files on the shelf
-        removeAll()
-        onEmptiedByDrag?()
+        onDraggedOut?()
     }
 }
