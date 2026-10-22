@@ -5,10 +5,11 @@ import AppKit
 final class ShelfController {
     private let shelfView = ShelfView(frame: NSRect(x: 0, y: 0, width: 160, height: 160))
     private lazy var panel = makePanel()
+    let history = ShelfHistory()
 
     init() {
         shelfView.onClose = { [weak self] in self?.clear() }
-        shelfView.onEmptiedByDrag = { [weak self] in self?.hide() }
+        shelfView.onDraggedOut = { [weak self] in self?.clear() }
     }
 
     /// Shows the shelf centred on `point`, so releasing the mouse right away drops the files.
@@ -33,9 +34,30 @@ final class ShelfController {
         panel.orderOut(nil)
     }
 
+    /// Empties and hides the shelf, saving its files to the history first.
     func clear() {
+        saveToHistory()
         shelfView.removeAll()
         hide()
+    }
+
+    /// Reopens a shelf from the history. Files that no longer exist are skipped.
+    /// Whatever is on the shelf now goes into the history, so it isn't lost.
+    func restore(historyIndex index: Int) {
+        guard history.entries.indices.contains(index) else { return }
+        let files = history.existingFiles(of: history.entries[index])
+        guard !files.isEmpty else { return }
+        // Taken out of the history while it's on the shelf; it comes back when cleared again.
+        history.remove(at: index)
+        saveToHistory()
+        shelfView.removeAll()
+        shelfView.add(files)
+        show(near: NSEvent.mouseLocation)
+    }
+
+    private func saveToHistory() {
+        let files = shelfView.bookmarkedFiles
+        history.record(bookmarks: files.map(\.bookmark), names: files.map(\.name))
     }
 
     private func makePanel() -> NSPanel {

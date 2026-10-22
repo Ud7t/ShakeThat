@@ -17,6 +17,7 @@ Other bits:
 - Shake Settings edits how hard you need to shake: the distance of each stroke, how many direction changes, the time window they must fit in, and a cooldown between shelves. Changes apply as soon as you save. The values live in `~/Library/Application Support/ShakeThat/shake-settings.json`, which you can also edit by hand; reopen Shake Settings (or relaunch) to pick up hand edits.
 - Drag the shelf by its edge or label to move it. Dragging the file cards drags the files out.
 - The x button clears the shelf and hides it. It never deletes files; the shelf only holds references.
+- **Recent Shelves** in the menu lists the last 10 shelves that were cleared (with the x, Clear Shelf, or by dragging the files out). Choosing one puts those files back on a shelf, skipping any that no longer exist. Files that were moved are found in their new place.
 
 ## Requirements
 
@@ -46,6 +47,8 @@ Run the tests with `swift test`.
 | `Sources/ShakeThat/DragShakeMonitor.swift` | Global mouse monitor that feeds the detector and checks the drag pasteboard for files |
 | `Sources/ShakeThat/ShelfController.swift` | The floating, non-activating panel and where it appears |
 | `Sources/ShakeThat/ShelfView.swift` | Drop target and drag source for the files on the shelf |
+| `Sources/ShakeThat/ShelfHistory.swift` | The last 10 cleared shelves, saved as file bookmarks in user defaults |
+| `Sources/ShakeThat/RecentShelvesMenu.swift` | The Recent Shelves submenu |
 | `Sources/ShakeThat/MenuBarIcon.swift` | Menu bar glyph: the icon's cursor and shake lines, drawn as a template image |
 | `Sources/ShakeThat/AppDelegate.swift` | Menu bar item and wiring |
 | `Resources/Icon/` | App icon: `ShakeThatIcon.svg` is the source, and `AppIcon-1024.png` is the master the build turns into `AppIcon.icns` |
