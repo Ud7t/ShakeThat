@@ -13,7 +13,8 @@ The destination decides what happens to the files, just as with a normal drag: F
 
 Other bits:
 
-- Click the menu bar icon for **Show Shelf**, **Clear Shelf**, and **Quit**.
+- Click the menu bar icon for **Show Shelf**, **Clear Shelf**, **Shake Settings…**, and **Quit**.
+- Shake Settings edits how hard you need to shake: the distance of each stroke, how many direction changes, the time window they must fit in, and a cooldown between shelves. Changes apply as soon as you save. The values live in `~/Library/Application Support/ShakeThat/shake-settings.json`, which you can also edit by hand; reopen Shake Settings (or relaunch) to pick up hand edits.
 - Drag the shelf by its edge or label to move it. Dragging the file cards drags the files out.
 - The x button clears the shelf and hides it. It never deletes files; the shelf only holds references.
 
@@ -40,6 +41,8 @@ Run the tests with `swift test`.
 | Path | What it is |
 | --- | --- |
 | `Sources/ShakeCore/ShakeDetector.swift` | Pure shake-detection logic (direction reversals within a time window), unit tested |
+| `Sources/ShakeCore/ShakeSettings.swift` | The shake tuning values and their JSON file format, unit tested |
+| `Sources/ShakeThat/ShakeSettingsWindow.swift` | The Shake Settings window (SwiftUI) and the settings file in Application Support |
 | `Sources/ShakeThat/DragShakeMonitor.swift` | Global mouse monitor that feeds the detector and checks the drag pasteboard for files |
 | `Sources/ShakeThat/ShelfController.swift` | The floating, non-activating panel and where it appears |
 | `Sources/ShakeThat/ShelfView.swift` | Drop target and drag source for the files on the shelf |
@@ -50,7 +53,7 @@ Run the tests with `swift test`.
 
 ## Roadmap ideas
 
-- Settings for shake sensitivity and launch at login
+- Launch at login
 - Dragging out a single file instead of the whole stack
 - Multiple shelves, Quick Look, and a keyboard shortcut to open a shelf
 

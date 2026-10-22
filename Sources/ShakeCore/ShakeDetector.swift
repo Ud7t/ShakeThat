@@ -21,16 +21,29 @@ public struct ShakeDetector {
     private var reversals: [TimeInterval] = []
     private var lastShake: TimeInterval = -.infinity
 
-    public init(
-        minimumTravel: Double = 30,
-        requiredReversals: Int = 4,
-        window: TimeInterval = 0.8,
-        cooldown: TimeInterval = 1.0
-    ) {
-        self.minimumTravel = minimumTravel
-        self.requiredReversals = requiredReversals
-        self.window = window
-        self.cooldown = cooldown
+    public init(settings: ShakeSettings = .defaults) {
+        minimumTravel = settings.minimumTravel
+        requiredReversals = settings.requiredReversals
+        window = settings.window
+        cooldown = settings.cooldown
+    }
+
+    /// The detector's current tuning, e.g. for applying new values from the settings file.
+    public var settings: ShakeSettings {
+        get {
+            ShakeSettings(
+                minimumTravel: minimumTravel,
+                requiredReversals: requiredReversals,
+                window: window,
+                cooldown: cooldown
+            )
+        }
+        set {
+            minimumTravel = newValue.minimumTravel
+            requiredReversals = newValue.requiredReversals
+            window = newValue.window
+            cooldown = newValue.cooldown
+        }
     }
 
     /// Forgets the current gesture, e.g. when the mouse button goes down or up.

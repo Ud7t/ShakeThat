@@ -12,6 +12,12 @@ final class DragShakeMonitor {
     private let dragPasteboard = NSPasteboard(name: .drag)
     private var changeCountAtMouseDown = 0
 
+    /// The shake-detection tuning. Changes apply to the next mouse sample.
+    var settings: ShakeSettings {
+        get { detector.settings }
+        set { detector.settings = newValue }
+    }
+
     func start() {
         guard monitor == nil else { return }
         // Global monitors see events sent to other apps, which is where file drags start
