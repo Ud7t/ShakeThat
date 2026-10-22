@@ -7,9 +7,9 @@ enum MenuBarIcon {
         let image = NSImage(size: NSSize(width: 18, height: 18), flipped: true) { rect in
             // Paths are in the app icon's SVG coordinates (Resources/Icon/ShakeThatIcon.svg).
             // Their combined bounds, including the arcs' stroke width, are about
-            // x 187...441 and y 116...393; scale that to fit 16pt and centre it.
+            // x 187...441 and y 116...393; scale that to fit 14pt and centre it.
             let content = NSRect(x: 187, y: 116, width: 254, height: 277)
-            let scale = 16 / content.height
+            let scale = 14 / content.height
             let transform = NSAffineTransform()
             transform.translateX(
                 by: rect.midX - content.midX * scale,
@@ -67,7 +67,7 @@ enum MenuBarIcon {
             controlPoint2: NSPoint(x: control2.0, y: control2.1)
         )
         // Thicker than in the app icon so the lines survive being shrunk to menu bar size.
-        path.lineWidth = 24
+        path.lineWidth = 22
         path.lineCapStyle = .round
         return path
     }
