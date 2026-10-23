@@ -1,6 +1,21 @@
-# ShakeThat
+<p align="center">
+  <img src="Resources/Icon/AppIcon-1024.png" width="96" height="96" alt="ShakeThat App Icon" />
+</p>
 
-Free, open-source Dropover alternative for macOS. Shake while dragging to open a floating shelf, then drop files anywhere.
+<h1 align="center">ShakeThat</h1>
+
+<p align="center">
+  Free, open-source Dropover alternative for macOS. Shake while dragging to open a floating shelf, then drop files anywhere.
+</p>
+
+<p align="center">
+  <a href="https://github.com/Ud7t/ShakeThat/releases"><img src="https://img.shields.io/badge/macOS-13.0%2B-blue?logo=apple" alt="macOS 13.0+" /></a>
+  <a href="LICENSE"><img src="https://img.shields.io/badge/License-MIT-green.svg" alt="License: MIT" /></a>
+  <a href="https://github.com/Ud7t/ShakeThat/releases"><img src="https://img.shields.io/github/v/release/Ud7t/ShakeThat?include_prereleases&color=orange" alt="Latest Release" /></a>
+  <a href="https://github.com/Ud7t/ShakeThat/stargazers"><img src="https://img.shields.io/github/stars/Ud7t/ShakeThat" alt="Stars" /></a>
+</p>
+
+---
 
 ## How it works
 
@@ -13,8 +28,9 @@ The destination decides what happens to the files, just as with a normal drag: F
 
 Other bits:
 
+- **Drop zone**: instead of shaking, drag files toward the top centre of the screen (the notch on MacBooks that have one). A drop zone appears there; drop the files on it and they go onto the shelf. Shake Settings can turn it off or move it to the left or right screen edge.
 - Click the menu bar icon for **Show Shelf**, **Clear Shelf**, **Shake Settings…**, and **Quit**.
-- Shake Settings edits how hard you need to shake: the distance of each stroke, how many direction changes, the time window they must fit in, and a cooldown between shelves. Changes apply as soon as you save. The values live in `~/Library/Application Support/ShakeThat/settings.json`, which you can also edit by hand; reopen Shake Settings (or relaunch) to pick up hand edits.
+- Shake Settings edits the drop zone and how hard you need to shake: the distance of each stroke, how many direction changes, the time window they must fit in, and a cooldown between shelves. Changes apply as soon as you save. The values live in `~/Library/Application Support/ShakeThat/settings.json`, which you can also edit by hand; reopen Shake Settings (or relaunch) to pick up hand edits.
 - Drag the shelf by its edge or label to move it. Dragging the file cards drags the files out.
 - The x button clears the shelf and hides it. It never deletes files; the shelf only holds references.
 - Right-click (or Control-click) the shelf for quick actions on all of its files: **Copy Path**, **Reveal in Finder**, **Compress** to a zip, and **Move to Folder…**. When there are images on the shelf, **Convert** them to PNG, JPEG, HEIC or TIFF, or **Resize** them to 75%, 50% or 25%. New files are saved next to the originals and never overwrite anything. A zip or converted images take the originals' place on the shelf, and the previous shelf goes into Recent Shelves. Everything runs locally.
@@ -45,10 +61,12 @@ Run the tests with `swift test`.
 | `Sources/ShakeCore/ShakeDetector.swift` | Pure shake-detection logic (direction reversals within a time window), unit tested |
 | `Sources/ShakeCore/ShakeSettings.swift` | The shake tuning values and their JSON file format, unit tested |
 | `Sources/ShakeCore/ShelfSettings.swift` | The hand-edited shelf values in the settings file (`recentShelvesLimit`), unit tested |
+| `Sources/ShakeCore/DropZoneSettings.swift` | Drop zone on/off and position in the settings file, and where the zone sits on a screen, unit tested |
 | `Sources/ShakeCore/FileNaming.swift` | Names for new files ("photo (50%).png", "Archive 2.zip") that never overwrite, unit tested |
 | `Sources/ShakeCore/SettingsFile.swift` | Writes into the shared settings file without dropping other keys, unit tested |
 | `Sources/ShakeThat/ShakeSettingsWindow.swift` | The Shake Settings window (SwiftUI) and the settings file in Application Support |
 | `Sources/ShakeThat/DragShakeMonitor.swift` | Global mouse monitor that feeds the detector and checks the drag pasteboard for files |
+| `Sources/ShakeThat/DropZone.swift` | The drop zone panel at the notch or a screen edge, shown while files are dragged near it |
 | `Sources/ShakeThat/ShelfController.swift` | The floating, non-activating panel and where it appears |
 | `Sources/ShakeThat/ShelfView.swift` | Drop target and drag source for the files on the shelf |
 | `Sources/ShakeThat/ShelfActions.swift` | Quick actions: copy paths, reveal, zip, image convert and resize, move to a folder |
