@@ -1,6 +1,21 @@
-# ShakeThat
+<p align="center">
+  <img src="Resources/Icon/AppIcon-1024.png" width="96" height="96" alt="ShakeThat App Icon" />
+</p>
 
-Free, open-source Dropover alternative for macOS. Shake while dragging to open a floating shelf, then drop files anywhere.
+<h1 align="center">ShakeThat</h1>
+
+<p align="center">
+  Free, open-source Dropover alternative for macOS. Shake while dragging to open a floating shelf, then drop files anywhere.
+</p>
+
+<p align="center">
+  <a href="https://github.com/Ud7t/ShakeThat/releases"><img src="https://img.shields.io/badge/macOS-13.0%2B-blue?logo=apple" alt="macOS 13.0+" /></a>
+  <a href="LICENSE"><img src="https://img.shields.io/badge/License-MIT-green.svg" alt="License: MIT" /></a>
+  <a href="https://github.com/Ud7t/ShakeThat/releases"><img src="https://img.shields.io/github/v/release/Ud7t/ShakeThat?include_prereleases&color=orange" alt="Latest Release" /></a>
+  <a href="https://github.com/Ud7t/ShakeThat/stargazers"><img src="https://img.shields.io/github/stars/Ud7t/ShakeThat" alt="Stars" /></a>
+</p>
+
+---
 
 ## How it works
 
