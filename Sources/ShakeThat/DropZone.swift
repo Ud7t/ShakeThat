@@ -27,7 +27,8 @@ final class DropZoneController {
         zoneView.onDragEnded = { [weak self] in self?.hideSoon() }
     }
 
-    /// Called as the cursor moves during a file drag. Shows the zone when the cursor is near it.
+    /// Called as the cursor moves during a file drag. The notch glows for the whole drag;
+    /// an edge zone shows only when the cursor is near it.
     func fileDragMoved(to point: NSPoint) {
         guard settings.dropZoneEnabled,
               let screen = NSScreen.screens.first(where: { NSMouseInRect(point, $0.frame, false) })
@@ -38,7 +39,8 @@ final class DropZoneController {
             visible: screen.visibleFrame,
             notch: notchSize(of: screen)
         )
-        if DropZoneLayout.activationFrame(around: frame).contains(point) {
+        let show = settings.dropZonePosition == .notch || DropZoneLayout.activationFrame(around: frame).contains(point)
+        if show {
             pendingHide?.cancel()
             if !panel.isVisible || zoneFrame != frame {
                 zoneFrame = frame
@@ -179,7 +181,8 @@ private final class DropZoneView: NSView {
         }
     }
 
-    /// A black shape over the notch with a purple glow around it, brighter while files are over it.
+    /// A black shape over the notch with a purple glow around it, shown while files are dragged
+    /// and brighter while they're over it.
     private func drawNotchGlow() {
         let margin = DropZoneLayout.glowMargin
         let radius: CGFloat = 10
