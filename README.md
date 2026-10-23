@@ -40,7 +40,7 @@ Other bits:
 ## Requirements
 
 - macOS 13 Ventura or later
-- Xcode 15 or later (or the Swift 5.9+ command line tools) to build
+- (for building) Xcode 15+ or the Swift 5.9+ command line tools
 
 ## Download
 
@@ -61,32 +61,6 @@ open build/ShakeThat.app
 During development you can also run it straight from SwiftPM with `swift run`, or open `Package.swift` in Xcode.
 
 Run the tests with `swift test`.
-
-## Project layout
-
-| Path | What it is |
-| --- | --- |
-| `Sources/ShakeCore/ShakeDetector.swift` | Pure shake-detection logic (direction reversals within a time window), unit tested |
-| `Sources/ShakeCore/ShakeSettings.swift` | The shake tuning values and their JSON file format, unit tested |
-| `Sources/ShakeCore/ShelfSettings.swift` | The hand-edited shelf values in the settings file (`recentShelvesLimit`), unit tested |
-| `Sources/ShakeCore/DropZoneSettings.swift` | Drop zone on/off and position in the settings file, and where the zone sits on a screen, unit tested |
-| `Sources/ShakeCore/FileNaming.swift` | Names for new files ("photo (50%).png", "Archive 2.zip") that never overwrite, unit tested |
-| `Sources/ShakeCore/FileDetailsFormat.swift` | Text for the file count and the details panel ("6 Files", "00:08", "1 page"), unit tested |
-| `Sources/ShakeCore/SettingsFile.swift` | Writes into the shared settings file without dropping other keys, unit tested |
-| `Sources/ShakeThat/ShakeSettingsWindow.swift` | The Shake Settings window (SwiftUI) and the settings file in Application Support |
-| `Sources/ShakeThat/DragShakeMonitor.swift` | Global mouse monitor that feeds the detector and checks the drag pasteboard for files |
-| `Sources/ShakeThat/DropZone.swift` | The drop zone panel at the notch or a screen edge, shown while files are dragged near it |
-| `Sources/ShakeThat/ShelfController.swift` | The floating, non-activating panel and where it appears |
-| `Sources/ShakeThat/ShelfView.swift` | Drop target and drag source for the files on the shelf |
-| `Sources/ShakeThat/CountPill.swift` | The "N Files" button at the bottom of the shelf |
-| `Sources/ShakeThat/FileDetails.swift`, `FileDetailsView.swift` | The details panel (SwiftUI in a popover) and the per-file details it reads |
-| `Sources/ShakeThat/ShelfActions.swift` | Quick actions: copy paths, reveal, zip, image convert and resize, move to a folder |
-| `Sources/ShakeThat/ShelfHistory.swift` | The last 10 cleared shelves, saved as file bookmarks in user defaults |
-| `Sources/ShakeThat/RecentShelvesMenu.swift` | The Recent Shelves submenu |
-| `Sources/ShakeThat/MenuBarIcon.swift` | Menu bar glyph: the icon's cursor and shake lines, drawn as a template image |
-| `Sources/ShakeThat/AppDelegate.swift` | Menu bar item and wiring |
-| `Resources/Icon/` | App icon: `ShakeThatIcon.svg` is the source, and `AppIcon-1024.png` is the master the build turns into `AppIcon.icns` |
-| `scripts/build-app.sh` | Builds and ad-hoc signs `build/ShakeThat.app` |
 
 ## Roadmap ideas
 
