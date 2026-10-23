@@ -41,6 +41,13 @@ Other bits:
 - macOS 13 Ventura or later
 - Xcode 15 or later (or the Swift 5.9+ command line tools) to build
 
+## Download
+
+1. Download the latest `ShakeThat-vX.Y.Z.zip` from [Releases](https://github.com/Ud7t/ShakeThat/releases).
+2. Unzip it and move **ShakeThat** to your `/Applications` folder.
+
+> **First launch:** ShakeThat is a free, open-source app, so it isn't signed with an Apple Developer ID or notarized by Apple. macOS will refuse to open it the first time with an "unidentified developer" or "can't be verified" warning. To open it anyway, right-click `ShakeThat.app` in Finder and choose **Open**, then confirm. You only need to do this once. On macOS 15 Sequoia and later, if right-click doesn't offer the option, try to open the app once, then go to **System Settings → Privacy & Security** and click **Open Anyway**.
+
 ## Build and run
 
 ```sh
