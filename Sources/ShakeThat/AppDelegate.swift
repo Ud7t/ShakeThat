@@ -9,6 +9,7 @@ final class AppDelegate: NSObject, NSApplicationDelegate {
     }
     private let shelf = ShelfController()
     private let shakeMonitor = DragShakeMonitor()
+    private let dropZone = DropZoneController()
     private let shakeSettings = ShakeSettingsStore()
     private lazy var settingsWindow = ShakeSettingsWindowController(store: shakeSettings)
 
@@ -21,8 +22,20 @@ final class AppDelegate: NSObject, NSApplicationDelegate {
         shakeMonitor.onShake = { [weak self] location in
             self?.shelf.show(near: location)
         }
+        shakeMonitor.onFileDragMoved = { [weak self] location in
+            self?.dropZone.fileDragMoved(to: location)
+        }
+        shakeMonitor.onFileDragEnded = { [weak self] in
+            self?.dropZone.dragEnded()
+        }
+        dropZone.onDrop = { [weak self] files, point in
+            self?.shelf.add(files, near: point)
+        }
         shakeSettings.onChange = { [weak self] settings in
             self?.shakeMonitor.settings = settings
+        }
+        shakeSettings.onDropZoneChange = { [weak self] settings in
+            self?.dropZone.settings = settings
         }
         shakeSettings.reload()
         shakeMonitor.start()

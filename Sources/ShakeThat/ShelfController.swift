@@ -30,6 +30,12 @@ final class ShelfController {
         panel.orderFrontRegardless()
     }
 
+    /// Puts `files` on the shelf and shows it centred on `point`.
+    func add(_ files: [URL], near point: NSPoint) {
+        shelfView.add(files)
+        show(near: point)
+    }
+
     func hide() {
         panel.orderOut(nil)
     }

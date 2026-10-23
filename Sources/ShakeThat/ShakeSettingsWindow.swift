@@ -2,7 +2,7 @@ import AppKit
 import ShakeCore
 import SwiftUI
 
-/// Loads and saves the shake values in the settings file in ~/Library/Application Support/ShakeThat/.
+/// Loads and saves the shake and drop zone values in the settings file in ~/Library/Application Support/ShakeThat/.
 @MainActor
 final class ShakeSettingsStore: ObservableObject {
     private static let folderURL = FileManager.default
@@ -16,6 +16,9 @@ final class ShakeSettingsStore: ObservableObject {
     @Published private(set) var settings = ShakeSettings.defaults
     /// Called whenever `settings` changes, so the shake monitor can pick up new values.
     var onChange: ((ShakeSettings) -> Void)?
+    @Published private(set) var dropZone = DropZoneSettings.defaults
+    /// Called whenever `dropZone` changes.
+    var onDropZoneChange: ((DropZoneSettings) -> Void)?
 
     /// Reads the file, writing it out with the defaults first if it doesn't exist yet
     /// so there's always a file to open and edit by hand.
@@ -33,16 +36,22 @@ final class ShakeSettingsStore: ObservableObject {
         if ShakeSettings.load(from: Self.fileURL) != nil {
             // Add the hand-edited shelf values to the file so they can be found, keeping any already set.
             try? SettingsFile.merge(ShelfSettings.defaults, into: Self.fileURL, onlyMissing: true)
+            try? SettingsFile.merge(DropZoneSettings.defaults, into: Self.fileURL, onlyMissing: true)
+            dropZone = DropZoneSettings.load(from: Self.fileURL) ?? dropZone
         }
         // An unreadable file is left alone (and the previous values kept) rather than overwritten.
         onChange?(settings)
+        onDropZoneChange?(dropZone)
     }
 
-    func save(_ newSettings: ShakeSettings) throws {
+    func save(_ newSettings: ShakeSettings, dropZone newDropZone: DropZoneSettings) throws {
         let clamped = newSettings.clamped()
         try clamped.save(to: Self.fileURL)
+        try newDropZone.save(to: Self.fileURL)
         settings = clamped
+        dropZone = newDropZone
         onChange?(clamped)
+        onDropZoneChange?(newDropZone)
     }
 }
 
@@ -72,7 +81,7 @@ final class ShakeSettingsWindowController {
 
     private func makeWindow() -> NSWindow {
         let window = NSWindow(
-            contentRect: NSRect(x: 0, y: 0, width: 380, height: 260),
+            contentRect: NSRect(x: 0, y: 0, width: 380, height: 380),
             styleMask: [.titled, .closable],
             backing: .buffered,
             defer: false
@@ -87,12 +96,14 @@ struct ShakeSettingsView: View {
     @ObservedObject var store: ShakeSettingsStore
     let close: () -> Void
     @State private var draft: ShakeSettings
+    @State private var dropZoneDraft: DropZoneSettings
     @State private var errorMessage: String?
 
     init(store: ShakeSettingsStore, close: @escaping () -> Void) {
         self.store = store
         self.close = close
         _draft = State(initialValue: store.settings)
+        _dropZoneDraft = State(initialValue: store.dropZone)
     }
 
     var body: some View {
@@ -115,6 +126,22 @@ struct ShakeSettingsView: View {
                 .foregroundStyle(.secondary)
                 .fixedSize(horizontal: false, vertical: true)
 
+            Divider()
+
+            Toggle("Show a drop zone while dragging files", isOn: $dropZoneDraft.dropZoneEnabled)
+            Form {
+                Picker("Drop zone position", selection: $dropZoneDraft.dropZonePosition) {
+                    ForEach(DropZonePosition.allCases, id: \.self) { position in
+                        Text(position.title).tag(position)
+                    }
+                }
+                .disabled(!dropZoneDraft.dropZoneEnabled)
+            }
+            Text("Drag files toward the zone and it appears. Drop them on it to put them on the shelf without shaking.")
+                .font(.caption)
+                .foregroundStyle(.secondary)
+                .fixedSize(horizontal: false, vertical: true)
+
             if let errorMessage {
                 Text(errorMessage).font(.caption).foregroundStyle(.red)
             }
@@ -123,12 +150,15 @@ struct ShakeSettingsView: View {
                 Button("Show in Finder") {
                     NSWorkspace.shared.activateFileViewerSelecting([ShakeSettingsStore.fileURL])
                 }
-                Button("Defaults") { draft = .defaults }
+                Button("Defaults") {
+                    draft = .defaults
+                    dropZoneDraft = .defaults
+                }
                 Spacer()
                 Button("Cancel", action: close).keyboardShortcut(.cancelAction)
                 Button("Save") {
                     do {
-                        try store.save(draft)
+                        try store.save(draft, dropZone: dropZoneDraft)
                         close()
                     } catch {
                         errorMessage = "Couldn't save: \(error.localizedDescription)"
@@ -148,6 +178,16 @@ struct ShakeSettingsView: View {
                     .frame(width: 60)
                 Stepper("", value: value, step: step).labelsHidden()
             }
+        }
+    }
+}
+
+private extension DropZonePosition {
+    var title: String {
+        switch self {
+        case .notch: return "Top (notch)"
+        case .left: return "Left edge"
+        case .right: return "Right edge"
         }
     }
 }
