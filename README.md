@@ -28,7 +28,7 @@ The destination decides what happens to the files, just as with a normal drag: F
 
 Other bits:
 
-- **Drop zone**: instead of shaking, drag files toward the top centre of the screen (the notch on MacBooks that have one). A drop zone appears there; drop the files on it and they go onto the shelf. Shake Settings can turn it off or move it to the left or right screen edge.
+- **Drop zone**: instead of shaking, drag files toward the top centre of the screen (the notch on MacBooks that have one). The notch glows purple; drop the files on it and they go onto the shelf. Shake Settings can turn it off or move it to the left or right screen edge.
 - Click the menu bar icon for **Show Shelf**, **Clear Shelf**, **Shake Settings…**, and **Quit**.
 - Shake Settings edits the drop zone and how hard you need to shake: the distance of each stroke, how many direction changes, the time window they must fit in, and a cooldown between shelves. Changes apply as soon as you save. The values live in `~/Library/Application Support/ShakeThat/settings.json`, which you can also edit by hand; reopen Shake Settings (or relaunch) to pick up hand edits.
 - Drag the shelf by its edge or label to move it. Dragging the file cards drags the files out.
