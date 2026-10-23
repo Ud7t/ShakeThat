@@ -25,7 +25,9 @@ final class ShelfView: NSView, NSDraggingSource {
     private let thumbnails = Thumbnails()
     private let label = NSTextField(labelWithString: "")
     private let closeButton = NSButton()
-    private let shareButton = NSButton()
+    private let moreButton = NSButton()
+    /// Kept alive while its Share item is in a menu.
+    private var sharePicker: NSSharingServicePicker?
     private var dragStarted = false
     /// True while a quick action runs, so another can't start on the same files.
     private var isBusy = false {
@@ -49,6 +51,7 @@ final class ShelfView: NSView, NSDraggingSource {
         addSubview(label)
 
         closeButton.image = NSImage(systemSymbolName: "xmark.circle.fill", accessibilityDescription: "Close shelf")
+        closeButton.symbolConfiguration = Self.buttonSymbol
         closeButton.isBordered = false
         closeButton.contentTintColor = .tertiaryLabelColor
         closeButton.target = self
@@ -56,21 +59,22 @@ final class ShelfView: NSView, NSDraggingSource {
         closeButton.translatesAutoresizingMaskIntoConstraints = false
         addSubview(closeButton)
 
-        shareButton.image = NSImage(systemSymbolName: "square.and.arrow.up.circle.fill", accessibilityDescription: "Share files")
-        shareButton.isBordered = false
-        shareButton.contentTintColor = .tertiaryLabelColor
-        shareButton.target = self
-        shareButton.action = #selector(shareClicked)
-        shareButton.translatesAutoresizingMaskIntoConstraints = false
-        addSubview(shareButton)
+        moreButton.image = NSImage(systemSymbolName: "ellipsis.circle.fill", accessibilityDescription: "Share and quick actions")
+        moreButton.symbolConfiguration = Self.buttonSymbol
+        moreButton.isBordered = false
+        moreButton.contentTintColor = .tertiaryLabelColor
+        moreButton.target = self
+        moreButton.action = #selector(moreClicked)
+        moreButton.translatesAutoresizingMaskIntoConstraints = false
+        addSubview(moreButton)
 
         NSLayoutConstraint.activate([
             // Inside the dashed outline (inset 6, corner radius 12) rather than on top of it.
             closeButton.topAnchor.constraint(equalTo: topAnchor, constant: 14),
             closeButton.leadingAnchor.constraint(equalTo: leadingAnchor, constant: 14),
             // Mirrors the close button in the opposite corner.
-            shareButton.topAnchor.constraint(equalTo: topAnchor, constant: 14),
-            shareButton.trailingAnchor.constraint(equalTo: trailingAnchor, constant: -14),
+            moreButton.topAnchor.constraint(equalTo: topAnchor, constant: 14),
+            moreButton.trailingAnchor.constraint(equalTo: trailingAnchor, constant: -14),
 
             fanView.centerXAnchor.constraint(equalTo: centerXAnchor),
             fanView.centerYAnchor.constraint(equalTo: centerYAnchor, constant: -6),
@@ -89,6 +93,9 @@ final class ShelfView: NSView, NSDraggingSource {
     required init?(coder: NSCoder) {
         fatalError("init(coder:) has not been implemented")
     }
+
+    /// Size of the close and "..." buttons' symbols.
+    private static let buttonSymbol = NSImage.SymbolConfiguration(pointSize: 17, weight: .regular)
 
     /// Tray symbol tinted to match the current appearance (the fan draws images as-is).
     private static let placeholder: NSImage = {
@@ -129,7 +136,7 @@ final class ShelfView: NSView, NSDraggingSource {
             fanView.images = [Self.placeholder]
             label.stringValue = "Drop files here"
         }
-        shareButton.isHidden = urls.isEmpty
+        moreButton.isHidden = urls.isEmpty
         needsDisplay = true
     }
 
@@ -137,11 +144,11 @@ final class ShelfView: NSView, NSDraggingSource {
         onClose?()
     }
 
-    /// Opens the system share sheet (AirDrop, Mail, Messages, ...) for every file on the shelf.
-    @objc private func shareClicked() {
-        guard !urls.isEmpty else { return }
-        let picker = NSSharingServicePicker(items: urls)
-        picker.show(relativeTo: shareButton.bounds, of: shareButton, preferredEdge: .minY)
+    /// Opens the same menu as right-clicking the shelf, just below the button.
+    @objc private func moreClicked() {
+        guard let menu = actionsMenu() else { return }
+        let below = NSPoint(x: 0, y: moreButton.isFlipped ? moreButton.bounds.maxY + 4 : -4)
+        menu.popUp(positioning: nil, at: below, in: moreButton)
     }
 
     override func draw(_ dirtyRect: NSRect) {
@@ -253,10 +260,21 @@ final class ShelfView: NSView, NSDraggingSource {
 
     /// Right-click (or Control-click) the shelf for actions on all of its files.
     override func menu(for event: NSEvent) -> NSMenu? {
+        actionsMenu()
+    }
+
+    /// Share and the quick actions, for every file on the shelf. Used by right-click and the "..." button.
+    private func actionsMenu() -> NSMenu? {
         guard !urls.isEmpty, !isBusy else { return nil }
         let files = urls
         let images = files.filter(ShelfActions.isImage)
         let menu = NSMenu()
+
+        // The system Share submenu: AirDrop, Mail, Messages, ...
+        let picker = NSSharingServicePicker(items: files)
+        sharePicker = picker
+        menu.addItem(picker.standardShareMenuItem)
+        menu.addItem(.separator())
 
         menu.addItem(ActionMenuItem(files.count == 1 ? "Copy Path" : "Copy \(files.count) Paths") {
             ShelfActions.copyPaths(files)
