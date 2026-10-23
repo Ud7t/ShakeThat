@@ -7,6 +7,8 @@ final class ShelfView: NSView, NSDraggingSource {
     var onClose: (() -> Void)?
     /// Called after the files were dragged out somewhere, while they're still on the shelf.
     var onDraggedOut: (() -> Void)?
+    /// Called when a quick action made new files (a zip, converted images) that take the shelf's place.
+    var onReplaceFiles: (([URL]) -> Void)?
 
     private(set) var urls: [URL] = [] {
         didSet { refresh() }
@@ -25,6 +27,10 @@ final class ShelfView: NSView, NSDraggingSource {
     private let closeButton = NSButton()
     private let shareButton = NSButton()
     private var dragStarted = false
+    /// True while a quick action runs, so another can't start on the same files.
+    private var isBusy = false {
+        didSet { refresh() }
+    }
     /// Set on mouse down outside the files: the gesture moves the shelf instead of the files.
     private var moveStart: (mouse: NSPoint, windowOrigin: NSPoint)?
 
@@ -118,7 +124,7 @@ final class ShelfView: NSView, NSDraggingSource {
     private func refresh() {
         if let first = urls.first {
             fanView.images = urls.map { thumbnails.image(for: $0) { [weak self] in self?.refresh() } }
-            label.stringValue = urls.count == 1 ? first.lastPathComponent : "\(urls.count) files"
+            label.stringValue = isBusy ? "Working…" : urls.count == 1 ? first.lastPathComponent : "\(urls.count) files"
         } else {
             fanView.images = [Self.placeholder]
             label.stringValue = "Drop files here"
@@ -189,6 +195,10 @@ final class ShelfView: NSView, NSDraggingSource {
     }
 
     override func mouseDown(with event: NSEvent) {
+        if event.modifierFlags.contains(.control), let menu = menu(for: event) {
+            NSMenu.popUpContextMenu(menu, with: event, for: self)
+            return
+        }
         dragStarted = false
         moveStart = nil
         let point = convert(event.locationInWindow, from: nil)
@@ -237,5 +247,157 @@ final class ShelfView: NSView, NSDraggingSource {
         dragStarted = false
         guard !operation.isEmpty else { return } // cancelled, keep the files on the shelf
         onDraggedOut?()
+    }
+
+    // MARK: Quick actions
+
+    /// Right-click (or Control-click) the shelf for actions on all of its files.
+    override func menu(for event: NSEvent) -> NSMenu? {
+        guard !urls.isEmpty, !isBusy else { return nil }
+        let files = urls
+        let images = files.filter(ShelfActions.isImage)
+        let menu = NSMenu()
+
+        menu.addItem(ActionMenuItem(files.count == 1 ? "Copy Path" : "Copy \(files.count) Paths") {
+            ShelfActions.copyPaths(files)
+        })
+        menu.addItem(ActionMenuItem("Reveal in Finder") {
+            ShelfActions.revealInFinder(files)
+        })
+        menu.addItem(.separator())
+        menu.addItem(ActionMenuItem(files.count == 1 ? "Compress “\(files[0].lastPathComponent)”" : "Compress \(files.count) Items") { [weak self] in
+            self?.compress(files)
+        })
+        menu.addItem(ActionMenuItem("Move to Folder…") { [weak self] in
+            self?.chooseFolderAndMove(files)
+        })
+
+        if !images.isEmpty {
+            menu.addItem(.separator())
+            let noun = images.count == 1 ? "Image" : "\(images.count) Images"
+            let convert = NSMenu()
+            for format in ShelfActions.ImageFormat.allCases {
+                let item = ActionMenuItem(format.title) { [weak self] in
+                    self?.transformImages(images) { try ShelfActions.convert($0, to: format) }
+                }
+                // Nothing to do if every image is already in this format.
+                item.isEnabled = images.contains { ShelfActions.contentType(of: $0)?.conforms(to: format.type) != true }
+                convert.addItem(item)
+            }
+            let convertItem = NSMenuItem(title: "Convert \(noun) To", action: nil, keyEquivalent: "")
+            convertItem.submenu = convert
+            menu.addItem(convertItem)
+
+            let resize = NSMenu()
+            for scale in ShelfActions.resizeScales {
+                resize.addItem(ActionMenuItem("\(Int((scale * 100).rounded()))%") { [weak self] in
+                    self?.transformImages(images) { try ShelfActions.resize($0, scale: scale) }
+                })
+            }
+            let resizeItem = NSMenuItem(title: "Resize \(noun)", action: nil, keyEquivalent: "")
+            resizeItem.submenu = resize
+            menu.addItem(resizeItem)
+        }
+        // Items are enabled or disabled above, not by the responder chain.
+        menu.autoenablesItems = false
+        return menu
+    }
+
+    /// The zip takes the files' place on the shelf, ready to drag out.
+    private func compress(_ files: [URL]) {
+        runInBackground {
+            do {
+                return ShelfActions.Outcome(files: [try ShelfActions.compress(files)])
+            } catch {
+                return ShelfActions.Outcome(errors: [error.localizedDescription])
+            }
+        } then: { [weak self] outcome in
+            guard let self, let zip = outcome.files.first else { return }
+            self.onReplaceFiles?(self.urls.filter { !files.contains($0) } + [zip])
+        }
+    }
+
+    /// The new images take the originals' place on the shelf. Other files stay.
+    private func transformImages(_ images: [URL], _ transform: @escaping (URL) throws -> URL) {
+        runInBackground {
+            ShelfActions.each(images, transform)
+        } then: { [weak self] outcome in
+            guard let self else { return }
+            let replacements = Dictionary(zip(images, outcome.files), uniquingKeysWith: { first, _ in first })
+            let updated = self.urls.map { replacements[$0] ?? $0 }
+            if updated != self.urls { self.onReplaceFiles?(updated) }
+        }
+    }
+
+    private func chooseFolderAndMove(_ files: [URL]) {
+        let panel = NSOpenPanel()
+        panel.canChooseFiles = false
+        panel.canChooseDirectories = true
+        panel.canCreateDirectories = true
+        panel.allowsMultipleSelection = false
+        panel.prompt = "Move"
+        panel.message = files.count == 1 ? "Move “\(files[0].lastPathComponent)” to:" : "Move \(files.count) items to:"
+        // The app never activates on its own, so bring it forward for the panel.
+        NSApp.activate(ignoringOtherApps: true)
+        guard panel.runModal() == .OK, let folder = panel.url else { return }
+
+        runInBackground {
+            ShelfActions.each(files) { try ShelfActions.move($0, to: folder) }
+        } then: { [weak self] outcome in
+            // Same files, new places: update the shelf in place.
+            guard let self else { return }
+            for (old, new) in zip(files, outcome.files) where old != new {
+                guard let index = self.urls.firstIndex(of: old) else { continue }
+                self.thumbnails.forget(old)
+                self.bookmarks[new] = self.bookmarks.removeValue(forKey: old)
+                self.urls[index] = new
+            }
+        }
+    }
+
+    private func runInBackground(
+        _ work: @escaping () -> ShelfActions.Outcome,
+        then finish: @escaping (ShelfActions.Outcome) -> Void
+    ) {
+        isBusy = true
+        DispatchQueue.global(qos: .userInitiated).async {
+            let outcome = work()
+            DispatchQueue.main.async {
+                MainActor.assumeIsolated {
+                    self.isBusy = false
+                    finish(outcome)
+                    if !outcome.errors.isEmpty { Self.showErrors(outcome.errors) }
+                }
+            }
+        }
+    }
+
+    private static func showErrors(_ errors: [String]) {
+        let alert = NSAlert()
+        alert.alertStyle = .warning
+        alert.messageText = errors.count == 1 ? "The action couldn’t be completed." : "Some files couldn’t be processed."
+        alert.informativeText = errors.joined(separator: "\n")
+        NSApp.activate(ignoringOtherApps: true)
+        alert.runModal()
+    }
+}
+
+/// A menu item that runs a closure.
+private final class ActionMenuItem: NSMenuItem {
+    private let handler: () -> Void
+
+    init(_ title: String, handler: @escaping () -> Void) {
+        self.handler = handler
+        super.init(title: title, action: #selector(run), keyEquivalent: "")
+        target = self
+    }
+
+    @available(*, unavailable)
+    required init(coder: NSCoder) {
+        fatalError("init(coder:) has not been implemented")
+    }
+
+    @objc private func run() {
+        handler()
     }
 }

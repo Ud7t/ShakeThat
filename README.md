@@ -33,6 +33,7 @@ Other bits:
 - Shake Settings edits the drop zone and how hard you need to shake: the distance of each stroke, how many direction changes, the time window they must fit in, and a cooldown between shelves. Changes apply as soon as you save. The values live in `~/Library/Application Support/ShakeThat/settings.json`, which you can also edit by hand; reopen Shake Settings (or relaunch) to pick up hand edits.
 - Drag the shelf by its edge or label to move it. Dragging the file cards drags the files out.
 - The x button clears the shelf and hides it. It never deletes files; the shelf only holds references.
+- Right-click (or Control-click) the shelf for quick actions on all of its files: **Copy Path**, **Reveal in Finder**, **Compress** to a zip, and **Move to Folder…**. When there are images on the shelf, **Convert** them to PNG, JPEG, HEIC or TIFF, or **Resize** them to 75%, 50% or 25%. New files are saved next to the originals and never overwrite anything. A zip or converted images take the originals' place on the shelf, and the previous shelf goes into Recent Shelves. Everything runs locally.
 - **Recent Shelves** in the menu lists the last 10 shelves that were cleared (with the x, Clear Shelf, or by dragging the files out). Choosing one puts those files back on a shelf, skipping any that no longer exist. Files that were moved are found in their new place. To keep more or fewer, change `recentShelvesLimit` (1 to 100) in `settings.json`; it isn't in the Shake Settings window.
 
 ## Requirements
@@ -61,12 +62,14 @@ Run the tests with `swift test`.
 | `Sources/ShakeCore/ShakeSettings.swift` | The shake tuning values and their JSON file format, unit tested |
 | `Sources/ShakeCore/ShelfSettings.swift` | The hand-edited shelf values in the settings file (`recentShelvesLimit`), unit tested |
 | `Sources/ShakeCore/DropZoneSettings.swift` | Drop zone on/off and position in the settings file, and where the zone sits on a screen, unit tested |
+| `Sources/ShakeCore/FileNaming.swift` | Names for new files ("photo (50%).png", "Archive 2.zip") that never overwrite, unit tested |
 | `Sources/ShakeCore/SettingsFile.swift` | Writes into the shared settings file without dropping other keys, unit tested |
 | `Sources/ShakeThat/ShakeSettingsWindow.swift` | The Shake Settings window (SwiftUI) and the settings file in Application Support |
 | `Sources/ShakeThat/DragShakeMonitor.swift` | Global mouse monitor that feeds the detector and checks the drag pasteboard for files |
 | `Sources/ShakeThat/DropZone.swift` | The drop zone panel at the notch or a screen edge, shown while files are dragged near it |
 | `Sources/ShakeThat/ShelfController.swift` | The floating, non-activating panel and where it appears |
 | `Sources/ShakeThat/ShelfView.swift` | Drop target and drag source for the files on the shelf |
+| `Sources/ShakeThat/ShelfActions.swift` | Quick actions: copy paths, reveal, zip, image convert and resize, move to a folder |
 | `Sources/ShakeThat/ShelfHistory.swift` | The last 10 cleared shelves, saved as file bookmarks in user defaults |
 | `Sources/ShakeThat/RecentShelvesMenu.swift` | The Recent Shelves submenu |
 | `Sources/ShakeThat/MenuBarIcon.swift` | Menu bar glyph: the icon's cursor and shake lines, drawn as a template image |
