@@ -47,22 +47,32 @@ public struct DropZoneSettings: Codable, Equatable {
 public enum DropZoneLayout {
     /// Size of the zone along its edge.
     public static let length: CGFloat = 220
-    /// Size of the zone out from its edge. The notch zone is taller so its content clears the notch.
+    /// Size of the zone out from its edge.
     public static let thickness: CGFloat = 64
-    public static let notchThickness: CGFloat = 84
+    /// Room around the notch for its glow to show in.
+    public static let glowMargin: CGFloat = 24
+    /// The notch width assumed on screens without one.
+    public static let fallbackNotchWidth: CGFloat = 200
     /// How far from the zone the cursor can be and still make it appear.
     public static let reach: CGFloat = 120
 
     /// The zone's frame on a screen. `screen` is the whole screen and `visible` the part
-    /// outside the menu bar and Dock, both in the same (bottom-left origin) coordinates.
-    public static func frame(for position: DropZonePosition, screen: CGRect, visible: CGRect) -> CGRect {
+    /// outside the menu bar and Dock, both in the same (bottom-left origin) coordinates. `notch` is
+    /// the notch's size; on a screen without one, a menu-bar-high area at the top centre stands in.
+    public static func frame(
+        for position: DropZonePosition,
+        screen: CGRect,
+        visible: CGRect,
+        notch: CGSize? = nil
+    ) -> CGRect {
         switch position {
         case .notch:
+            let size = notch ?? CGSize(width: fallbackNotchWidth, height: max(screen.maxY - visible.maxY, 24))
             return CGRect(
-                x: screen.midX - length / 2,
-                y: screen.maxY - notchThickness,
-                width: length,
-                height: notchThickness
+                x: screen.midX - size.width / 2 - glowMargin,
+                y: screen.maxY - size.height - glowMargin,
+                width: size.width + glowMargin * 2,
+                height: size.height + glowMargin
             )
         case .left:
             return CGRect(x: screen.minX, y: visible.midY - length / 2, width: thickness, height: length)

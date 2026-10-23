@@ -27,23 +27,38 @@ final class DropZoneController {
         zoneView.onDragEnded = { [weak self] in self?.hideSoon() }
     }
 
-    /// Called as the cursor moves during a file drag. Shows the zone when the cursor is near it.
+    /// Called as the cursor moves during a file drag. The notch glows for the whole drag;
+    /// an edge zone shows only when the cursor is near it.
     func fileDragMoved(to point: NSPoint) {
         guard settings.dropZoneEnabled,
               let screen = NSScreen.screens.first(where: { NSMouseInRect(point, $0.frame, false) })
         else { return }
-        let frame = DropZoneLayout.frame(for: settings.dropZonePosition, screen: screen.frame, visible: screen.visibleFrame)
-        if DropZoneLayout.activationFrame(around: frame).contains(point) {
+        let frame = DropZoneLayout.frame(
+            for: settings.dropZonePosition,
+            screen: screen.frame,
+            visible: screen.visibleFrame,
+            notch: notchSize(of: screen)
+        )
+        let show = settings.dropZonePosition == .notch || DropZoneLayout.activationFrame(around: frame).contains(point)
+        if show {
             pendingHide?.cancel()
             if !panel.isVisible || zoneFrame != frame {
                 zoneFrame = frame
                 zoneView.position = settings.dropZonePosition
+                // The notch draws its own glow; a window shadow would muddy it.
+                panel.hasShadow = settings.dropZonePosition != .notch
                 panel.setFrame(frame, display: true)
             }
             panel.orderFrontRegardless()
         } else if panel.isVisible, !zoneView.isDropTarget {
             hide()
         }
+    }
+
+    /// The notch's size, or `nil` on a screen without one.
+    private func notchSize(of screen: NSScreen) -> CGSize? {
+        guard let left = screen.auxiliaryTopLeftArea, let right = screen.auxiliaryTopRightArea else { return nil }
+        return CGSize(width: screen.frame.width - left.width - right.width, height: screen.safeAreaInsets.top)
     }
 
     /// Called when the mouse is released. The drop itself is delivered just after the mouse-up,
@@ -109,9 +124,7 @@ private final class DropZoneView: NSView {
     }
 
     private let icon = NSImageView()
-    private let label = NSTextField(labelWithString: "Drop for shelf")
     private let stack = NSStackView()
-    private var stackConstraints: [NSLayoutConstraint] = []
 
     override init(frame frameRect: NSRect) {
         super.init(frame: frameRect)
@@ -120,15 +133,16 @@ private final class DropZoneView: NSView {
         icon.image = NSImage(systemSymbolName: "tray.and.arrow.down.fill", accessibilityDescription: "Drop zone")
         icon.symbolConfiguration = .init(pointSize: 20, weight: .medium)
         icon.contentTintColor = .white
-        label.font = .systemFont(ofSize: 12, weight: .medium)
-        label.textColor = .white
 
         stack.orientation = .vertical
         stack.spacing = 4
         stack.addArrangedSubview(icon)
-        stack.addArrangedSubview(label)
         stack.translatesAutoresizingMaskIntoConstraints = false
         addSubview(stack)
+        NSLayoutConstraint.activate([
+            stack.centerXAnchor.constraint(equalTo: centerXAnchor),
+            stack.centerYAnchor.constraint(equalTo: centerYAnchor),
+        ])
         updateLayout()
     }
 
@@ -138,21 +152,16 @@ private final class DropZoneView: NSView {
     }
 
     private func updateLayout() {
-        NSLayoutConstraint.deactivate(stackConstraints)
-        // The edge zones are too narrow for the label.
-        label.isHidden = position != .notch
-        stackConstraints = [stack.centerXAnchor.constraint(equalTo: centerXAnchor)]
-        if position == .notch {
-            // Keep the content in the lower part, clear of the notch and menu bar.
-            stackConstraints.append(stack.bottomAnchor.constraint(equalTo: bottomAnchor, constant: -10))
-        } else {
-            stackConstraints.append(stack.centerYAnchor.constraint(equalTo: centerYAnchor))
-        }
-        NSLayoutConstraint.activate(stackConstraints)
+        // The notch just glows; the edge zones show the icon.
+        stack.isHidden = position == .notch
         needsDisplay = true
     }
 
     override func draw(_ dirtyRect: NSRect) {
+        if position == .notch {
+            drawNotchGlow()
+            return
+        }
         // Round only the corners away from the screen edge, by letting the shape run past that edge.
         let radius: CGFloat = 16
         var shape = bounds
@@ -170,6 +179,36 @@ private final class DropZoneView: NSView {
             NSColor.controlAccentColor.setStroke()
             outline.stroke()
         }
+    }
+
+    /// A black shape over the notch with a purple glow around it, shown while files are dragged
+    /// and brighter while they're over it.
+    private func drawNotchGlow() {
+        let margin = DropZoneLayout.glowMargin
+        let radius: CGFloat = 10
+        // Inset from the sides and bottom for the glow, and run past the top so only the bottom corners round.
+        var notch = bounds
+        notch.origin.x += margin
+        notch.size.width -= margin * 2
+        notch.origin.y += margin
+        notch.size.height += radius - margin
+        let path = NSBezierPath(roundedRect: notch, xRadius: radius, yRadius: radius)
+
+        let purple = NSColor.systemPurple
+        let glow = NSShadow()
+        glow.shadowColor = purple.withAlphaComponent(isDropTarget ? 1 : 0.75)
+        glow.shadowBlurRadius = isDropTarget ? 22 : 14
+        glow.shadowOffset = .zero
+
+        NSGraphicsContext.saveGraphicsState()
+        glow.set()
+        NSColor.black.setFill()
+        path.fill()
+        NSGraphicsContext.restoreGraphicsState()
+
+        path.lineWidth = isDropTarget ? 3 : 2
+        purple.setStroke()
+        path.stroke()
     }
 
     private func fileURLs(from info: NSDraggingInfo) -> [URL] {

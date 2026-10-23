@@ -56,6 +56,15 @@ final class DropZoneSettingsTests: XCTestCase {
         XCTAssertEqual(zone.maxY, screen.maxY)
     }
 
+    func testNotchZoneWrapsTheNotchWithRoomForTheGlow() {
+        let screen = CGRect(x: 0, y: 0, width: 1512, height: 982)
+        let visible = CGRect(x: 0, y: 0, width: 1512, height: 945)
+        let notch = CGSize(width: 180, height: 32)
+        let zone = DropZoneLayout.frame(for: .notch, screen: screen, visible: visible, notch: notch)
+        XCTAssertEqual(zone.width, 180 + DropZoneLayout.glowMargin * 2)
+        XCTAssertEqual(zone.height, 32 + DropZoneLayout.glowMargin)
+    }
+
     func testEdgeZonesSitOnTheirEdgeOfASecondScreen() {
         let screen = CGRect(x: 1512, y: 0, width: 1920, height: 1080)
         let visible = CGRect(x: 1512, y: 0, width: 1920, height: 1055)
