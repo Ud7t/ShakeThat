@@ -22,7 +22,7 @@ final class ShelfController {
             width: size.width,
             height: size.height
         )
-        let screen = NSScreen.screens.first { NSMouseInRect(point, $0.frame, false) } ?? NSScreen.main
+        let screen = NSScreen.containing(point) ?? NSScreen.main
         if let visible = screen?.visibleFrame {
             frame.origin.x = min(max(frame.minX, visible.minX), visible.maxX - size.width)
             frame.origin.y = min(max(frame.minY, visible.minY), visible.maxY - size.height)
@@ -37,15 +37,11 @@ final class ShelfController {
         show(near: point)
     }
 
-    func hide() {
-        panel.orderOut(nil)
-    }
-
     /// Empties and hides the shelf, saving its files to the history first.
     func clear() {
         saveToHistory()
         shelfView.removeAll()
-        hide()
+        panel.orderOut(nil)
     }
 
     /// Swaps the shelf's files for the result of a quick action.
@@ -76,19 +72,8 @@ final class ShelfController {
     }
 
     private func makePanel() -> NSPanel {
-        let panel = NSPanel(
-            contentRect: shelfView.frame,
-            styleMask: [.borderless, .nonactivatingPanel],
-            backing: .buffered,
-            defer: false
-        )
-        panel.isFloatingPanel = true
-        panel.level = .floating
+        let panel = NSPanel(overlayWithContentRect: shelfView.frame)
         panel.collectionBehavior = [.canJoinAllSpaces, .fullScreenAuxiliary]
-        panel.hidesOnDeactivate = false
-        panel.isOpaque = false
-        panel.backgroundColor = .clear
-        panel.hasShadow = true
 
         let background = NSVisualEffectView(frame: shelfView.frame)
         background.material = .hudWindow

@@ -27,13 +27,15 @@ final class ShakeSettingsStore: ObservableObject {
         if !files.fileExists(atPath: Self.fileURL.path), files.fileExists(atPath: Self.oldFileURL.path) {
             try? files.moveItem(at: Self.oldFileURL, to: Self.fileURL)
         }
+        var readable = false
         if let loaded = ShakeSettings.load(from: Self.fileURL) {
             settings = loaded
+            readable = true
         } else if !files.fileExists(atPath: Self.fileURL.path) {
             settings = .defaults
-            try? settings.save(to: Self.fileURL)
+            readable = (try? settings.save(to: Self.fileURL)) != nil
         }
-        if ShakeSettings.load(from: Self.fileURL) != nil {
+        if readable {
             // Add the hand-edited shelf values to the file so they can be found, keeping any already set.
             try? SettingsFile.merge(ShelfSettings.defaults, into: Self.fileURL, onlyMissing: true)
             try? SettingsFile.merge(DropZoneSettings.defaults, into: Self.fileURL, onlyMissing: true)

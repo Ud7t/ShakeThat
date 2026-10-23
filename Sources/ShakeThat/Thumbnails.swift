@@ -1,6 +1,5 @@
 import AppKit
 import QuickLookThumbnailing
-import UniformTypeIdentifiers
 
 /// Finder-style icons for files. Image files are upgraded to a Quick Look preview of the picture.
 @MainActor
@@ -14,7 +13,7 @@ final class Thumbnails {
 
         let icon = NSWorkspace.shared.icon(forFile: url.path)
         cache[url] = icon
-        guard isImage(url) else { return icon }
+        guard url.isImage else { return icon }
 
         let scale = NSScreen.main?.backingScaleFactor ?? 2
         let request = QLThumbnailGenerator.Request(
@@ -35,11 +34,6 @@ final class Thumbnails {
             }
         }
         return icon
-    }
-
-    private func isImage(_ url: URL) -> Bool {
-        let type = (try? url.resourceValues(forKeys: [.contentTypeKey]))?.contentType
-        return type?.conforms(to: .image) ?? false
     }
 
     func forget(_ url: URL) {

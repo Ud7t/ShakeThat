@@ -33,8 +33,7 @@ public struct DropZoneSettings: Codable, Equatable {
 
     /// Reads settings from `url`. Returns `nil` if the file is missing or isn't valid JSON.
     public static func load(from url: URL) -> DropZoneSettings? {
-        guard let data = try? Data(contentsOf: url) else { return nil }
-        return try? JSONDecoder().decode(DropZoneSettings.self, from: data)
+        SettingsFile.load(DropZoneSettings.self, from: url)
     }
 
     /// Writes these keys into the settings file, keeping the other keys there.
