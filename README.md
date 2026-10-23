@@ -15,6 +15,8 @@
   <a href="https://github.com/Ud7t/ShakeThat/stargazers"><img src="https://img.shields.io/github/stars/Ud7t/ShakeThat" alt="Stars" /></a>
 </p>
 
+<p align="center"><a href="https://ud7t.github.io/ShakeThat/"><b>ud7t.github.io/ShakeThat</b></a></p>
+
 ---
 
 ## How it works
