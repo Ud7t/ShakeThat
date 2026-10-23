@@ -1,4 +1,5 @@
 import AppKit
+import ShakeCore
 
 /// The shelf's content: accepts dropped files and lets you drag them all back out.
 @MainActor
@@ -24,6 +25,9 @@ final class ShelfView: NSView, NSDraggingSource {
     private let fanView = IconFanView()
     private let thumbnails = Thumbnails()
     private let label = NSTextField(labelWithString: "")
+    /// "N Files" at the bottom; click it for the details panel.
+    private let countPill = CountPill()
+    private let details = FileDetailsPopover()
     private let closeButton = NSButton()
     private let shareButton = NSButton()
     private var dragStarted = false
@@ -47,6 +51,11 @@ final class ShelfView: NSView, NSDraggingSource {
         label.textColor = .secondaryLabelColor
         label.translatesAutoresizingMaskIntoConstraints = false
         addSubview(label)
+
+        countPill.target = self
+        countPill.action = #selector(countClicked)
+        countPill.translatesAutoresizingMaskIntoConstraints = false
+        addSubview(countPill)
 
         closeButton.image = NSImage(systemSymbolName: "xmark.circle.fill", accessibilityDescription: "Close shelf")
         closeButton.isBordered = false
@@ -80,6 +89,9 @@ final class ShelfView: NSView, NSDraggingSource {
             label.topAnchor.constraint(equalTo: fanView.bottomAnchor, constant: 6),
             label.leadingAnchor.constraint(equalTo: leadingAnchor, constant: 10),
             label.trailingAnchor.constraint(equalTo: trailingAnchor, constant: -10),
+
+            countPill.topAnchor.constraint(equalTo: fanView.bottomAnchor, constant: 4),
+            countPill.centerXAnchor.constraint(equalTo: centerXAnchor),
         ])
 
         refresh()
@@ -122,15 +134,25 @@ final class ShelfView: NSView, NSDraggingSource {
     }
 
     private func refresh() {
-        if let first = urls.first {
-            fanView.images = urls.map { thumbnails.image(for: $0) { [weak self] in self?.refresh() } }
-            label.stringValue = isBusy ? "Working…" : urls.count == 1 ? first.lastPathComponent : "\(urls.count) files"
+        label.isHidden = !urls.isEmpty
+        countPill.isHidden = urls.isEmpty
+        countPill.isEnabled = !isBusy
+        if !urls.isEmpty {
+            let images = urls.map { thumbnails.image(for: $0) { [weak self] in self?.refresh() } }
+            fanView.images = images
+            countPill.text = isBusy ? "Working…" : FileDetailsFormat.fileCount(urls.count)
+            details.model.update(zip(urls, images).map { (url: $0, icon: $1) })
         } else {
             fanView.images = [Self.placeholder]
             label.stringValue = "Drop files here"
+            details.close()
         }
         shareButton.isHidden = urls.isEmpty
         needsDisplay = true
+    }
+
+    @objc private func countClicked() {
+        details.toggle(below: countPill)
     }
 
     @objc private func closeClicked() {
