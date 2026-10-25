@@ -47,10 +47,7 @@ public struct ShakeSettings: Codable, Equatable {
 
     /// Reads settings from `url`. Returns `nil` if the file is missing or isn't valid JSON.
     public static func load(from url: URL) -> ShakeSettings? {
-        guard let data = try? Data(contentsOf: url),
-              let settings = try? JSONDecoder().decode(ShakeSettings.self, from: data)
-        else { return nil }
-        return settings.clamped()
+        SettingsFile.load(ShakeSettings.self, from: url)?.clamped()
     }
 
     /// Writes settings to `url` as pretty-printed JSON, creating the folder if needed.

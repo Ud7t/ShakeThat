@@ -24,9 +24,6 @@ public struct ShelfSettings: Codable, Equatable {
 
     /// Reads settings from `url`. Returns `nil` if the file is missing or isn't valid JSON.
     public static func load(from url: URL) -> ShelfSettings? {
-        guard let data = try? Data(contentsOf: url),
-              let settings = try? JSONDecoder().decode(ShelfSettings.self, from: data)
-        else { return nil }
-        return settings.clamped()
+        SettingsFile.load(ShelfSettings.self, from: url)?.clamped()
     }
 }
