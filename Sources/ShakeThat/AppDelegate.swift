@@ -3,8 +3,10 @@ import Carbon.HIToolbox
 import ShakeCore
 
 @MainActor
-final class AppDelegate: NSObject, NSApplicationDelegate {
+final class AppDelegate: NSObject, NSApplicationDelegate, NSMenuDelegate {
     private var statusItem: NSStatusItem?
+    /// Pinned shelves listed in the menu bar menu, replaced each time it opens.
+    private var pinnedItems: [NSMenuItem] = []
     private lazy var recentShelves = RecentShelvesMenu(history: shelf.history) { [weak self] index in
         self?.shelf.restore(historyIndex: index)
     }
@@ -50,6 +52,9 @@ final class AppDelegate: NSObject, NSApplicationDelegate {
 
     private func makeMenu() -> NSMenu {
         let menu = NSMenu()
+        menu.delegate = self
+        // Pinned shelves whose files are gone are disabled by hand.
+        menu.autoenablesItems = false
         let showItem = menu.addItem(withTitle: "Show Shelf", action: #selector(showShelf), keyEquivalent: " ")
         showItem.keyEquivalentModifierMask = [.option, .shift]
         showItem.target = self
@@ -60,6 +65,20 @@ final class AppDelegate: NSObject, NSApplicationDelegate {
         menu.addItem(.separator())
         menu.addItem(withTitle: "Quit ShakeThat", action: #selector(NSApplication.terminate(_:)), keyEquivalent: "q")
         return menu
+    }
+
+    /// Lists the pinned shelves just above Recent Shelves.
+    func menuNeedsUpdate(_ menu: NSMenu) {
+        for item in pinnedItems { menu.removeItem(item) }
+        pinnedItems = recentShelves.pinnedItems()
+        var index = menu.index(of: recentShelves.item)
+        if !pinnedItems.isEmpty {
+            pinnedItems.insert(.separator(), at: 0)
+        }
+        for item in pinnedItems {
+            menu.insertItem(item, at: index)
+            index += 1
+        }
     }
 
     @objc private func showShelf() {
