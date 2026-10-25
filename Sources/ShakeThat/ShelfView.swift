@@ -1,4 +1,5 @@
 import AppKit
+import Quartz
 import ShakeCore
 
 /// The shelf's content: accepts dropped files and lets you drag them all back out.
@@ -12,7 +13,10 @@ final class ShelfView: NSView, NSDraggingSource {
     var onReplaceFiles: (([URL]) -> Void)?
 
     private(set) var urls: [URL] = [] {
-        didSet { refresh() }
+        didSet {
+            refresh()
+            refreshQuickLook()
+        }
     }
 
     private var isDropTarget = false {
@@ -43,6 +47,8 @@ final class ShelfView: NSView, NSDraggingSource {
     }
     /// Set on mouse down outside the files: the gesture moves the shelf instead of the files.
     private var moveStart: (mouse: NSPoint, windowOrigin: NSPoint)?
+    /// The Quick Look panel while the shelf is feeding it files.
+    private var quickLook: QLPreviewPanel?
 
     override init(frame frameRect: NSRect) {
         super.init(frame: frameRect)
@@ -215,6 +221,9 @@ final class ShelfView: NSView, NSDraggingSource {
     }
 
     override func mouseDown(with event: NSEvent) {
+        // Take the keyboard so the spacebar opens Quick Look, like in Finder.
+        window?.makeKey()
+        window?.makeFirstResponder(self)
         if event.modifierFlags.contains(.control), let menu = menu(for: event) {
             NSMenu.popUpContextMenu(menu, with: event, for: self)
             return
@@ -267,6 +276,58 @@ final class ShelfView: NSView, NSDraggingSource {
         dragStarted = false
         guard !operation.isEmpty else { return } // cancelled, keep the files on the shelf
         onDraggedOut?()
+    }
+
+    // MARK: Quick Look
+
+    override var acceptsFirstResponder: Bool {
+        true
+    }
+
+    /// Spacebar previews the shelf's files in Quick Look, and pressing it again closes the preview.
+    override func keyDown(with event: NSEvent) {
+        guard event.charactersIgnoringModifiers == " ", !urls.isEmpty else {
+            super.keyDown(with: event)
+            return
+        }
+        guard let panel = QLPreviewPanel.shared() else { return }
+        if QLPreviewPanel.sharedPreviewPanelExists(), panel.isVisible {
+            panel.orderOut(nil)
+        } else {
+            // The app never activates on its own, so bring it forward for the panel.
+            NSApp.activate(ignoringOtherApps: true)
+            panel.makeKeyAndOrderFront(nil)
+        }
+    }
+
+    // Quick Look calls these on the main thread; they're declared without actor isolation.
+    nonisolated override func acceptsPreviewPanelControl(_ panel: QLPreviewPanel!) -> Bool {
+        true
+    }
+
+    nonisolated override func beginPreviewPanelControl(_ panel: QLPreviewPanel!) {
+        MainActor.assumeIsolated {
+            quickLook = panel
+            panel.dataSource = self
+            panel.currentPreviewItemIndex = 0
+        }
+    }
+
+    nonisolated override func endPreviewPanelControl(_ panel: QLPreviewPanel!) {
+        MainActor.assumeIsolated {
+            panel.dataSource = nil
+            quickLook = nil
+        }
+    }
+
+    /// Keeps an open preview in step with the shelf, and closes it when the shelf empties.
+    private func refreshQuickLook() {
+        guard let quickLook else { return }
+        if urls.isEmpty {
+            quickLook.orderOut(nil)
+        } else {
+            quickLook.reloadData()
+        }
     }
 
     // MARK: Quick actions
@@ -410,6 +471,16 @@ final class ShelfView: NSView, NSDraggingSource {
         alert.informativeText = errors.joined(separator: "\n")
         NSApp.activate(ignoringOtherApps: true)
         alert.runModal()
+    }
+}
+
+extension ShelfView: QLPreviewPanelDataSource {
+    nonisolated func numberOfPreviewItems(in panel: QLPreviewPanel!) -> Int {
+        MainActor.assumeIsolated { urls.count }
+    }
+
+    nonisolated func previewPanel(_ panel: QLPreviewPanel!, previewItemAt index: Int) -> QLPreviewItem! {
+        MainActor.assumeIsolated { urls[index] as NSURL }
     }
 }
 
