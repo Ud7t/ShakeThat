@@ -30,6 +30,7 @@ Other bits:
 
 - **Drop zone**: instead of shaking, drop files on the top centre of the screen (the notch on MacBooks that have one) and they go onto the shelf. It glows purple while you drag files. Shake Settings can turn it off or move it to the left or right screen edge.
 - Click the menu bar icon for **Show Shelf**, **Clear Shelf**, **Shake Settings…**, and **Quit**.
+- Press **⌥⇧Space** (Option-Shift-Space) from any app to open the shelf at the pointer, the same default as Dropover. No Accessibility permission is needed.
 - Shake Settings edits the drop zone and how hard you need to shake: the distance of each stroke, how many direction changes, the time window they must fit in, and a cooldown between shelves. Changes apply as soon as you save. The values live in `~/Library/Application Support/ShakeThat/settings.json`, which you can also edit by hand; reopen Shake Settings (or relaunch) to pick up hand edits.
 - Drag the shelf by its edge to move it. Dragging the file cards drags the files out.
 - The x button clears the shelf and hides it. It never deletes files; the shelf only holds references.
@@ -66,7 +67,7 @@ Run the tests with `swift test`.
 
 - Launch at login
 - Dragging out a single file instead of the whole stack
-- Multiple shelves, Quick Look, and a keyboard shortcut to open a shelf
+- Multiple shelves and Quick Look
 
 ## License
 

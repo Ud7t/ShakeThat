@@ -1,4 +1,5 @@
 import AppKit
+import Carbon.HIToolbox
 import ShakeCore
 
 @MainActor
@@ -12,6 +13,7 @@ final class AppDelegate: NSObject, NSApplicationDelegate {
     private let dropZone = DropZoneController()
     private let shakeSettings = ShakeSettingsStore()
     private lazy var settingsWindow = ShakeSettingsWindowController(store: shakeSettings)
+    private var newShelfHotKey: GlobalHotKey?
 
     func applicationDidFinishLaunching(_ notification: Notification) {
         let item = NSStatusBar.system.statusItem(withLength: NSStatusItem.squareLength)
@@ -39,11 +41,18 @@ final class AppDelegate: NSObject, NSApplicationDelegate {
         }
         shakeSettings.reload()
         shakeMonitor.start()
+
+        // ⌥⇧Space, the same default as Dropover's "New shelf" shortcut.
+        newShelfHotKey = GlobalHotKey(keyCode: kVK_Space, modifiers: optionKey | shiftKey) { [weak self] in
+            self?.showShelf()
+        }
     }
 
     private func makeMenu() -> NSMenu {
         let menu = NSMenu()
-        menu.addItem(withTitle: "Show Shelf", action: #selector(showShelf), keyEquivalent: "").target = self
+        let showItem = menu.addItem(withTitle: "Show Shelf", action: #selector(showShelf), keyEquivalent: " ")
+        showItem.keyEquivalentModifierMask = [.option, .shift]
+        showItem.target = self
         menu.addItem(withTitle: "Clear Shelf", action: #selector(clearShelf), keyEquivalent: "").target = self
         menu.addItem(recentShelves.item)
         menu.addItem(.separator())
