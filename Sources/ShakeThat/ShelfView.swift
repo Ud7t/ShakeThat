@@ -10,6 +10,10 @@ final class ShelfView: NSView, NSDraggingSource {
     var onDraggedOut: (() -> Void)?
     /// Called when a quick action made new files (a zip, converted images) that take the shelf's place.
     var onReplaceFiles: (([URL]) -> Void)?
+    /// Called by Pin Shelf / Unpin Shelf in the actions menu.
+    var onTogglePin: (() -> Void)?
+    /// A pinned shelf stays in the menu bar menu after it's cleared, outside the Recent Shelves limit.
+    var isPinned = false
 
     private(set) var urls: [URL] = [] {
         didSet { refresh() }
@@ -329,6 +333,10 @@ final class ShelfView: NSView, NSDraggingSource {
             resizeItem.submenu = resize
             menu.addItem(resizeItem)
         }
+        menu.addItem(.separator())
+        menu.addItem(ActionMenuItem(isPinned ? "Unpin Shelf" : "Pin Shelf") { [weak self] in
+            self?.onTogglePin?()
+        })
         // Items are enabled or disabled above, not by the responder chain.
         menu.autoenablesItems = false
         return menu

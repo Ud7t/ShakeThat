@@ -11,6 +11,7 @@ final class ShelfController {
         shelfView.onClose = { [weak self] in self?.clear() }
         shelfView.onDraggedOut = { [weak self] in self?.clear() }
         shelfView.onReplaceFiles = { [weak self] files in self?.replace(with: files) }
+        shelfView.onTogglePin = { [weak self] in self?.shelfView.isPinned.toggle() }
     }
 
     /// Shows the shelf centred on `point`, so releasing the mouse right away drops the files.
@@ -39,13 +40,15 @@ final class ShelfController {
 
     /// Empties and hides the shelf, saving its files to the history first.
     func clear() {
-        saveToHistory()
+        saveToHistory(isPinned: shelfView.isPinned)
         shelfView.removeAll()
+        shelfView.isPinned = false
         panel.orderOut(nil)
     }
 
     /// Swaps the shelf's files for the result of a quick action.
     /// The previous files go into the history, so the originals are a click away.
+    /// A pinned shelf stays pinned with the new files.
     func replace(with files: [URL]) {
         saveToHistory()
         shelfView.removeAll()
@@ -56,19 +59,21 @@ final class ShelfController {
     /// Whatever is on the shelf now goes into the history, so it isn't lost.
     func restore(historyIndex index: Int) {
         guard history.entries.indices.contains(index) else { return }
-        let files = history.existingFiles(of: history.entries[index])
+        let entry = history.entries[index]
+        let files = history.existingFiles(of: entry)
         guard !files.isEmpty else { return }
         // Taken out of the history while it's on the shelf; it comes back when cleared again.
         history.remove(at: index)
-        saveToHistory()
+        saveToHistory(isPinned: shelfView.isPinned)
         shelfView.removeAll()
         shelfView.add(files)
+        shelfView.isPinned = entry.isPinned
         show(near: NSEvent.mouseLocation)
     }
 
-    private func saveToHistory() {
+    private func saveToHistory(isPinned: Bool = false) {
         let files = shelfView.bookmarkedFiles
-        history.record(bookmarks: files.map(\.bookmark), names: files.map(\.name))
+        history.record(bookmarks: files.map(\.bookmark), names: files.map(\.name), isPinned: isPinned)
     }
 
     private func makePanel() -> NSPanel {
