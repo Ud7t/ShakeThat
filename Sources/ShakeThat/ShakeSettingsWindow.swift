@@ -1,4 +1,5 @@
 import AppKit
+import ServiceManagement
 import ShakeCore
 import SwiftUI
 
@@ -99,6 +100,8 @@ struct ShakeSettingsView: View {
     let close: () -> Void
     @State private var draft: ShakeSettings
     @State private var dropZoneDraft: DropZoneSettings
+    /// Read from the system rather than the settings file, since it can also be changed in System Settings.
+    @State private var launchAtLogin = ShakeSettingsView.isLaunchAtLoginOn
     @State private var errorMessage: String?
 
     init(store: ShakeSettingsStore, close: @escaping () -> Void) {
@@ -144,6 +147,16 @@ struct ShakeSettingsView: View {
                 .foregroundStyle(.secondary)
                 .fixedSize(horizontal: false, vertical: true)
 
+            Divider()
+
+            Toggle("Launch at login", isOn: $launchAtLogin)
+            if SMAppService.mainApp.status == .requiresApproval {
+                Text("Allow ShakeThat in System Settings › General › Login Items to finish turning this on.")
+                    .font(.caption)
+                    .foregroundStyle(.secondary)
+                    .fixedSize(horizontal: false, vertical: true)
+            }
+
             if let errorMessage {
                 Text(errorMessage).font(.caption).foregroundStyle(.red)
             }
@@ -161,6 +174,7 @@ struct ShakeSettingsView: View {
                 Button("Save") {
                     do {
                         try store.save(draft, dropZone: dropZoneDraft)
+                        try applyLaunchAtLogin()
                         close()
                     } catch {
                         errorMessage = "Couldn't save: \(error.localizedDescription)"
@@ -171,6 +185,22 @@ struct ShakeSettingsView: View {
         }
         .padding(20)
         .frame(width: 380)
+    }
+
+    /// Registers or unregisters the app as a login item when the toggle no longer matches the system.
+    private func applyLaunchAtLogin() throws {
+        guard launchAtLogin != Self.isLaunchAtLoginOn else { return }
+        if launchAtLogin {
+            try SMAppService.mainApp.register()
+        } else {
+            try SMAppService.mainApp.unregister()
+        }
+    }
+
+    /// On once registered, even while the user still has to allow it in System Settings.
+    private static var isLaunchAtLoginOn: Bool {
+        let status = SMAppService.mainApp.status
+        return status == .enabled || status == .requiresApproval
     }
 
     private func row(_ label: String, value: Binding<Double>, step: Double, fractionDigits: Int) -> some View {
