@@ -1,7 +1,8 @@
 import AppKit
 import QuickLookThumbnailing
 
-/// Finder-style icons for files. Image files are upgraded to a Quick Look preview of the picture.
+/// Finder-style icons for files. Image files are upgraded to a Quick Look preview of the picture,
+/// and PDFs to a preview of their first page drawn as a document icon, as Finder shows them.
 @MainActor
 final class Thumbnails {
     private var cache: [URL: NSImage] = [:]
@@ -13,7 +14,8 @@ final class Thumbnails {
 
         let icon = NSWorkspace.shared.icon(forFile: url.path)
         cache[url] = icon
-        guard url.isImage else { return icon }
+        let isPDF = url.isPDF
+        guard url.isImage || isPDF else { return icon }
 
         let scale = NSScreen.main?.backingScaleFactor ?? 2
         let request = QLThumbnailGenerator.Request(
@@ -22,6 +24,8 @@ final class Thumbnails {
             scale: scale,
             representationTypes: .thumbnail
         )
+        // Finder draws PDF previews as a page with a border, rather than the bare page.
+        request.iconMode = isPDF
         QLThumbnailGenerator.shared.generateBestRepresentation(for: request) { [weak self] representation, _ in
             // If no preview can be made, the file keeps its icon.
             guard let image = representation?.nsImage else { return }
