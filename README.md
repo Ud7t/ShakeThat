@@ -26,6 +26,36 @@
 
 The destination decides what happens to the files, just as with a normal drag: Finder moves them within the same disk and copies them to another disk (hold Option to copy). Cancelling the drag keeps the files on the shelf.
 
+## Requirements
+
+- macOS 13 Ventura or later
+- (for building) Xcode 15+ or the Swift 5.9+ command line tools
+
+## Download
+
+1. Download the latest `ShakeThat-vX.Y.Z.zip` from [Releases](https://github.com/Ud7t/ShakeThat/releases).
+2. Unzip it and move **ShakeThat** to your `/Applications` folder.
+
+> **First launch:** ShakeThat is a free, open-source app, so it isn't signed with an Apple Developer ID or notarized by Apple. macOS will refuse to open it the first time with an "unidentified developer" or "can't be verified" warning. To open it anyway, right-click `ShakeThat.app` in Finder and choose **Open**, then confirm. You only need to do this once. On macOS 15 Sequoia and later, if right-click doesn't offer the option, try to open the app once, then go to **System Settings → Privacy & Security** and click **Open Anyway**.
+
+## Build and run
+
+```sh
+git clone https://github.com/Ud7t/ShakeThat.git
+cd ShakeThat
+./scripts/build-app.sh
+open build/ShakeThat.app
+```
+
+During development you can also run it straight from SwiftPM with `swift run`, or open `Package.swift` in Xcode.
+
+Run the tests with `swift test`.
+
+## Roadmap ideas
+
+- Dragging out a single file instead of the whole stack
+- Multiple shelves
+
 ## Other ways to open a shelf
 
 - **Drop zone**: instead of shaking, drop files on the top centre of the screen (the notch on MacBooks that have one) and they go onto the shelf. It glows purple while you drag files. Shake Settings can turn it off or move it to the left or right screen edge.
@@ -83,36 +113,6 @@ Changes apply as soon as you save.
 The values live in `~/Library/Application Support/ShakeThat/settings.json`, which you can also edit by hand; reopen Shake Settings (or relaunch) to pick up hand edits. Launch at login isn't stored there, because macOS keeps track of login items itself.
 
 One setting is only in the file: `recentShelvesLimit` (1 to 100, default 10) sets how many shelves Recent Shelves keeps.
-
-## Requirements
-
-- macOS 13 Ventura or later
-- (for building) Xcode 15+ or the Swift 5.9+ command line tools
-
-## Download
-
-1. Download the latest `ShakeThat-vX.Y.Z.zip` from [Releases](https://github.com/Ud7t/ShakeThat/releases).
-2. Unzip it and move **ShakeThat** to your `/Applications` folder.
-
-> **First launch:** ShakeThat is a free, open-source app, so it isn't signed with an Apple Developer ID or notarized by Apple. macOS will refuse to open it the first time with an "unidentified developer" or "can't be verified" warning. To open it anyway, right-click `ShakeThat.app` in Finder and choose **Open**, then confirm. You only need to do this once. On macOS 15 Sequoia and later, if right-click doesn't offer the option, try to open the app once, then go to **System Settings → Privacy & Security** and click **Open Anyway**.
-
-## Build and run
-
-```sh
-git clone https://github.com/Ud7t/ShakeThat.git
-cd ShakeThat
-./scripts/build-app.sh
-open build/ShakeThat.app
-```
-
-During development you can also run it straight from SwiftPM with `swift run`, or open `Package.swift` in Xcode.
-
-Run the tests with `swift test`.
-
-## Roadmap ideas
-
-- Dragging out a single file instead of the whole stack
-- Multiple shelves
 
 ## License
 
