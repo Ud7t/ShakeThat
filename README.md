@@ -51,11 +51,6 @@ During development you can also run it straight from SwiftPM with `swift run`, o
 
 Run the tests with `swift test`.
 
-## Roadmap ideas
-
-- Dragging out a single file instead of the whole stack
-- Multiple shelves
-
 ## Other ways to open a shelf
 
 - **Drop zone**: instead of shaking, drop files on the top centre of the screen (the notch on MacBooks that have one) and they go onto the shelf. It glows purple while you drag files. Shake Settings can turn it off or move it to the left or right screen edge.
