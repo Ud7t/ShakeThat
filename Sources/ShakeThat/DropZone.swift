@@ -31,7 +31,7 @@ final class DropZoneController {
     /// an edge zone shows only when the cursor is near it.
     func fileDragMoved(to point: NSPoint) {
         guard settings.dropZoneEnabled,
-              let screen = NSScreen.screens.first(where: { NSMouseInRect(point, $0.frame, false) })
+              let screen = NSScreen.containing(point)
         else { return }
         let frame = DropZoneLayout.frame(
             for: settings.dropZonePosition,
@@ -84,19 +84,11 @@ final class DropZoneController {
 
     private func makePanel() -> NSPanel {
         let panel = DropZonePanel(
-            contentRect: NSRect(x: 0, y: 0, width: DropZoneLayout.length, height: DropZoneLayout.thickness),
-            styleMask: [.borderless, .nonactivatingPanel],
-            backing: .buffered,
-            defer: false
+            overlayWithContentRect: NSRect(x: 0, y: 0, width: DropZoneLayout.length, height: DropZoneLayout.thickness)
         )
-        panel.isFloatingPanel = true
         // Above the menu bar, so the notch zone isn't hidden behind it.
         panel.level = .statusBar
         panel.collectionBehavior = [.canJoinAllSpaces, .fullScreenAuxiliary, .stationary]
-        panel.hidesOnDeactivate = false
-        panel.isOpaque = false
-        panel.backgroundColor = .clear
-        panel.hasShadow = true
         panel.contentView = zoneView
         return panel
     }
@@ -124,7 +116,6 @@ private final class DropZoneView: NSView {
     }
 
     private let icon = NSImageView()
-    private let stack = NSStackView()
 
     override init(frame frameRect: NSRect) {
         super.init(frame: frameRect)
@@ -133,15 +124,11 @@ private final class DropZoneView: NSView {
         icon.image = NSImage(systemSymbolName: "tray.and.arrow.down.fill", accessibilityDescription: "Drop zone")
         icon.symbolConfiguration = .init(pointSize: 20, weight: .medium)
         icon.contentTintColor = .white
-
-        stack.orientation = .vertical
-        stack.spacing = 4
-        stack.addArrangedSubview(icon)
-        stack.translatesAutoresizingMaskIntoConstraints = false
-        addSubview(stack)
+        icon.translatesAutoresizingMaskIntoConstraints = false
+        addSubview(icon)
         NSLayoutConstraint.activate([
-            stack.centerXAnchor.constraint(equalTo: centerXAnchor),
-            stack.centerYAnchor.constraint(equalTo: centerYAnchor),
+            icon.centerXAnchor.constraint(equalTo: centerXAnchor),
+            icon.centerYAnchor.constraint(equalTo: centerYAnchor),
         ])
         updateLayout()
     }
@@ -153,7 +140,7 @@ private final class DropZoneView: NSView {
 
     private func updateLayout() {
         // The notch just glows; the edge zones show the icon.
-        stack.isHidden = position == .notch
+        icon.isHidden = position == .notch
         needsDisplay = true
     }
 
@@ -165,11 +152,8 @@ private final class DropZoneView: NSView {
         // Round only the corners away from the screen edge, by letting the shape run past that edge.
         let radius: CGFloat = 16
         var shape = bounds
-        switch position {
-        case .notch: shape.size.height += radius
-        case .left: shape.origin.x -= radius; shape.size.width += radius
-        case .right: shape.size.width += radius
-        }
+        shape.size.width += radius
+        if position == .left { shape.origin.x -= radius }
         let path = NSBezierPath(roundedRect: shape, xRadius: radius, yRadius: radius)
         NSColor.black.withAlphaComponent(0.88).setFill()
         path.fill()
@@ -211,16 +195,8 @@ private final class DropZoneView: NSView {
         path.stroke()
     }
 
-    private func fileURLs(from info: NSDraggingInfo) -> [URL] {
-        let objects = info.draggingPasteboard.readObjects(
-            forClasses: [NSURL.self],
-            options: [.urlReadingFileURLsOnly: true]
-        )
-        return (objects as? [URL]) ?? []
-    }
-
     override func draggingEntered(_ sender: NSDraggingInfo) -> NSDragOperation {
-        guard !fileURLs(from: sender).isEmpty else { return [] }
+        guard sender.draggingPasteboard.hasFileURLs else { return [] }
         isDropTarget = true
         return .copy
     }
@@ -235,7 +211,7 @@ private final class DropZoneView: NSView {
 
     override func performDragOperation(_ sender: NSDraggingInfo) -> Bool {
         isDropTarget = false
-        let urls = fileURLs(from: sender)
+        let urls = sender.draggingPasteboard.fileURLs
         guard !urls.isEmpty else { return false }
         onDrop?(urls)
         return true

@@ -28,8 +28,12 @@ final class ShelfView: NSView, NSDraggingSource {
     /// "N Files" at the bottom; click it for the details panel.
     private let countPill = CountPill()
     private let details = FileDetailsPopover()
-    private let closeButton = NSButton()
-    private let moreButton = NSButton()
+    private lazy var closeButton = makeCornerButton(
+        symbol: "xmark.circle.fill", description: "Close shelf", action: #selector(closeClicked)
+    )
+    private lazy var moreButton = makeCornerButton(
+        symbol: "ellipsis.circle.fill", description: "Share and quick actions", action: #selector(moreClicked)
+    )
     /// Kept alive while its Share item is in a menu.
     private var sharePicker: NSSharingServicePicker?
     private var dragStarted = false
@@ -59,22 +63,7 @@ final class ShelfView: NSView, NSDraggingSource {
         countPill.translatesAutoresizingMaskIntoConstraints = false
         addSubview(countPill)
 
-        closeButton.image = NSImage(systemSymbolName: "xmark.circle.fill", accessibilityDescription: "Close shelf")
-        closeButton.symbolConfiguration = Self.buttonSymbol
-        closeButton.isBordered = false
-        closeButton.contentTintColor = .tertiaryLabelColor
-        closeButton.target = self
-        closeButton.action = #selector(closeClicked)
-        closeButton.translatesAutoresizingMaskIntoConstraints = false
         addSubview(closeButton)
-
-        moreButton.image = NSImage(systemSymbolName: "ellipsis.circle.fill", accessibilityDescription: "Share and quick actions")
-        moreButton.symbolConfiguration = Self.buttonSymbol
-        moreButton.isBordered = false
-        moreButton.contentTintColor = .tertiaryLabelColor
-        moreButton.target = self
-        moreButton.action = #selector(moreClicked)
-        moreButton.translatesAutoresizingMaskIntoConstraints = false
         addSubview(moreButton)
 
         NSLayoutConstraint.activate([
@@ -106,8 +95,18 @@ final class ShelfView: NSView, NSDraggingSource {
         fatalError("init(coder:) has not been implemented")
     }
 
-    /// Size of the close and "..." buttons' symbols.
-    private static let buttonSymbol = NSImage.SymbolConfiguration(pointSize: 17, weight: .regular)
+    /// The close and "..." buttons in the shelf's top corners.
+    private func makeCornerButton(symbol: String, description: String, action: Selector) -> NSButton {
+        let button = NSButton()
+        button.image = NSImage(systemSymbolName: symbol, accessibilityDescription: description)
+        button.symbolConfiguration = NSImage.SymbolConfiguration(pointSize: 17, weight: .regular)
+        button.isBordered = false
+        button.contentTintColor = .tertiaryLabelColor
+        button.target = self
+        button.action = action
+        button.translatesAutoresizingMaskIntoConstraints = false
+        return button
+    }
 
     /// Tray symbol tinted to match the current appearance (the fan draws images as-is).
     private static let placeholder: NSImage = {
@@ -183,17 +182,9 @@ final class ShelfView: NSView, NSDraggingSource {
 
     // MARK: Dropping files onto the shelf
 
-    private func fileURLs(from info: NSDraggingInfo) -> [URL] {
-        let objects = info.draggingPasteboard.readObjects(
-            forClasses: [NSURL.self],
-            options: [.urlReadingFileURLsOnly: true]
-        )
-        return (objects as? [URL]) ?? []
-    }
-
     override func draggingEntered(_ sender: NSDraggingInfo) -> NSDragOperation {
         // Ignore our own drag passing back over the shelf.
-        guard sender.draggingSource as? ShelfView !== self, !fileURLs(from: sender).isEmpty else { return [] }
+        guard sender.draggingSource as? ShelfView !== self, sender.draggingPasteboard.hasFileURLs else { return [] }
         isDropTarget = true
         return .copy
     }
@@ -208,7 +199,7 @@ final class ShelfView: NSView, NSDraggingSource {
 
     override func performDragOperation(_ sender: NSDraggingInfo) -> Bool {
         isDropTarget = false
-        add(fileURLs(from: sender))
+        add(sender.draggingPasteboard.fileURLs)
         return true
     }
 
@@ -289,7 +280,7 @@ final class ShelfView: NSView, NSDraggingSource {
     private func actionsMenu() -> NSMenu? {
         guard !urls.isEmpty, !isBusy else { return nil }
         let files = urls
-        let images = files.filter(ShelfActions.isImage)
+        let images = files.filter(\.isImage)
         let menu = NSMenu()
 
         // The system Share submenu: AirDrop, Mail, Messages, ...
@@ -321,7 +312,7 @@ final class ShelfView: NSView, NSDraggingSource {
                     self?.transformImages(images) { try ShelfActions.convert($0, to: format) }
                 }
                 // Nothing to do if every image is already in this format.
-                item.isEnabled = images.contains { ShelfActions.contentType(of: $0)?.conforms(to: format.type) != true }
+                item.isEnabled = images.contains { $0.contentType?.conforms(to: format.type) != true }
                 convert.addItem(item)
             }
             let convertItem = NSMenuItem(title: "Convert \(noun) To", action: nil, keyEquivalent: "")

@@ -2,6 +2,12 @@ import Foundation
 
 /// Helpers for the one JSON settings file that several settings types share.
 public enum SettingsFile {
+    /// Decodes a `T` from the JSON file at `url`. Returns `nil` if the file is missing or isn't valid JSON.
+    public static func load<T: Decodable>(_ type: T.Type, from url: URL) -> T? {
+        guard let data = try? Data(contentsOf: url) else { return nil }
+        return try? JSONDecoder().decode(type, from: data)
+    }
+
     /// Writes `value`'s keys into the JSON object at `url`, keeping any other keys already there,
     /// so saving one kind of settings never drops another's. With `onlyMissing`, keys already
     /// in the file keep their values. A missing or unreadable file starts from an empty object.

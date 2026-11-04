@@ -38,11 +38,6 @@ final class DragShakeMonitor {
         }
     }
 
-    func stop() {
-        if let monitor { NSEvent.removeMonitor(monitor) }
-        monitor = nil
-    }
-
     private func handle(_ event: NSEvent) {
         switch event.type {
         case .leftMouseDown:
@@ -69,9 +64,6 @@ final class DragShakeMonitor {
 
     private func isDraggingFiles() -> Bool {
         guard dragPasteboard.changeCount != changeCountAtMouseDown else { return false }
-        return dragPasteboard.canReadObject(
-            forClasses: [NSURL.self],
-            options: [.urlReadingFileURLsOnly: true]
-        )
+        return dragPasteboard.hasFileURLs
     }
 }

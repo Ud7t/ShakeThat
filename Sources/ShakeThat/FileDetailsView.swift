@@ -139,10 +139,6 @@ final class FileDetailsPopover {
         resize()
     }
 
-    var isShown: Bool {
-        popover.isShown
-    }
-
     func toggle(below view: NSView) {
         if popover.isShown {
             close()

@@ -68,14 +68,6 @@ enum ShelfActions {
         NSWorkspace.shared.activateFileViewerSelecting(urls)
     }
 
-    static func contentType(of url: URL) -> UTType? {
-        (try? url.resourceValues(forKeys: [.contentTypeKey]))?.contentType
-    }
-
-    static func isImage(_ url: URL) -> Bool {
-        contentType(of: url)?.conforms(to: .image) ?? false
-    }
-
     // MARK: File actions (blocking)
 
     /// Runs `action` on each file, carrying on past failures.
@@ -118,7 +110,7 @@ enum ShelfActions {
 
     /// Saves a copy of the image in another format next to it. An image already in that format is left as is.
     static func convert(_ url: URL, to format: ImageFormat) throws -> URL {
-        if contentType(of: url)?.conforms(to: format.type) == true { return url }
+        if url.contentType?.conforms(to: format.type) == true { return url }
         let source = try imageSource(at: url)
         guard var image = CGImageSourceCreateImageAtIndex(source, 0, nil) else {
             throw Failure("The image couldn't be read.")
