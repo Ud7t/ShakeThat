@@ -26,20 +26,63 @@
 
 The destination decides what happens to the files, just as with a normal drag: Finder moves them within the same disk and copies them to another disk (hold Option to copy). Cancelling the drag keeps the files on the shelf.
 
-Other bits:
+## Other ways to open a shelf
 
 - **Drop zone**: instead of shaking, drop files on the top centre of the screen (the notch on MacBooks that have one) and they go onto the shelf. It glows purple while you drag files. Shake Settings can turn it off or move it to the left or right screen edge.
-- Click the menu bar icon for **Show Shelf**, **Clear Shelf**, **Shake Settings…**, and **Quit**.
-- Shake Settings edits the drop zone and how hard you need to shake: the distance of each stroke, how many direction changes, the time window they must fit in, and a cooldown between shelves. Changes apply as soon as you save. The values live in `~/Library/Application Support/ShakeThat/settings.json`, which you can also edit by hand; reopen Shake Settings (or relaunch) to pick up hand edits.
-- **Launch at login** in Shake Settings opens ShakeThat when you log in. It's off by default, isn't stored in `settings.json`, and also shows up in **System Settings → General → Login Items**. It only works from the built `ShakeThat.app`, not `swift run`.
+- **Keyboard shortcut**: press **⌥⇧Space** (Option-Shift-Space) from any app to open the shelf at the pointer, the same default as Dropover. No Accessibility permission is needed.
+- **Menu bar**: click the menu bar icon and choose **Show Shelf**.
+
+## Using the shelf
+
 - Drag the shelf by its edge to move it. Dragging the file cards drags the files out.
-- The x button clears the shelf and hides it. It never deletes files; the shelf only holds references.
-- Press **⌥⇧Space** (Option-Shift-Space) from any app to open the shelf at the pointer, the same default as Dropover. No Accessibility permission is needed.
-- Click the ... button in the shelf's corner, or right-click (or Control-click) the shelf, for one menu that acts on all of its files: **Share** (AirDrop, Mail, Messages, ...), **Copy Path**, **Reveal in Finder**, **Compress** to a zip, and **Move to Folder…**. When there are images on the shelf, **Convert** them to PNG, JPEG, HEIC or TIFF, or **Resize** them to 75%, 50% or 25%. New files are saved next to the originals and never overwrite anything. A zip or converted images take the originals' place on the shelf, and the previous shelf goes into Recent Shelves. Everything runs locally.
-- **Recent Shelves** in the menu lists the last 10 shelves that were cleared (with the x, Clear Shelf, or by dragging the files out). Choosing one puts those files back on a shelf, skipping any that no longer exist. Files that were moved are found in their new place. To keep more or fewer, change `recentShelvesLimit` (1 to 100) in `settings.json`; it isn't in the Shake Settings window.
-- **Pin Shelf** in the ... menu keeps a shelf around after it's cleared. Pinned shelves are listed with a pin right in the menu bar menu and at the top of Recent Shelves, and don't count toward the limit. They stay until you choose **Unpin Shelf** or their files are gone.
-- Hold Option in the menu to turn a shelf's entry into **Remove “name”**, which takes it off the list.
+- Click the shelf, then press **Space** to preview its files in Quick Look. Press Space again to close the preview.
 - The **N Files** button at the bottom of the shelf opens a details panel: the total size, then each file with its name, size and a detail for its type (pixel size for images, length for videos and audio, page count for PDFs, item count for folders). Switch between a grid and a list with the toggle in its corner.
+- The x button clears the shelf and hides it. It never deletes files; the shelf only holds references.
+
+### Shelf actions
+
+Click the ... button in the shelf's corner, or right-click (or Control-click) the shelf, for one menu that acts on all of its files:
+
+- **Share** (AirDrop, Mail, Messages, ...), **Copy Path**, **Reveal in Finder**, **Compress** to a zip, and **Move to Folder…**
+- When there are images on the shelf, **Convert** them to PNG, JPEG, HEIC or TIFF, or **Resize** them to 75%, 50% or 25%.
+- **Pin Shelf** keeps the shelf around after it's cleared (see below).
+
+New files are saved next to the originals and never overwrite anything. A zip or converted images take the originals' place on the shelf, and the previous shelf goes into Recent Shelves. Everything runs locally.
+
+### Recent and pinned shelves
+
+- **Recent Shelves** in the menu bar menu lists the last 10 shelves that were cleared (with the x, Clear Shelf, or by dragging the files out). Choosing one puts those files back on a shelf, skipping any that no longer exist. Files that were moved are found in their new place.
+- **Pinned shelves** are listed with a pin right in the menu bar menu and at the top of Recent Shelves, and don't count toward the limit. They stay until you choose **Unpin Shelf** or their files are gone.
+- Hold Option in the menu to turn a shelf's entry into **Remove “name”**, which takes it off the list.
+
+## Menu bar
+
+Click the menu bar icon for **Show Shelf**, **Clear Shelf**, **Recent Shelves**, any pinned shelves, **Shake Settings…**, and **Quit**.
+
+## Keyboard shortcuts
+
+| Shortcut | What it does |
+| --- | --- |
+| ⌥⇧Space | Open the shelf at the pointer, from any app |
+| Space (shelf clicked) | Preview the shelf's files in Quick Look, or close the preview |
+| Option (menu open) | Turn shelf entries into **Remove “name”** |
+| Option (dragging from the shelf to Finder) | Copy instead of move |
+
+## Settings
+
+**Shake Settings…** in the menu bar menu edits:
+
+- **Shake sensitivity**: the distance of each stroke, how many direction changes, the time window they must fit in, and a cooldown between shelves.
+- **Drop zone**: on or off, and whether it's at the notch or the left or right screen edge.
+- **Launch at login**: opens ShakeThat when you log in. It's off by default and also shows up in **System Settings → General → Login Items**. It only works from the built `ShakeThat.app`, not `swift run`.
+
+Changes apply as soon as you save.
+
+### Settings file
+
+The values live in `~/Library/Application Support/ShakeThat/settings.json`, which you can also edit by hand; reopen Shake Settings (or relaunch) to pick up hand edits. Launch at login isn't stored there, because macOS keeps track of login items itself.
+
+One setting is only in the file: `recentShelvesLimit` (1 to 100, default 10) sets how many shelves Recent Shelves keeps.
 
 ## Requirements
 
@@ -69,7 +112,7 @@ Run the tests with `swift test`.
 ## Roadmap ideas
 
 - Dragging out a single file instead of the whole stack
-- Multiple shelves and Quick Look
+- Multiple shelves
 
 ## License
 
