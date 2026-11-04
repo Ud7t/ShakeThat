@@ -31,6 +31,7 @@ Other bits:
 - **Drop zone**: instead of shaking, drop files on the top centre of the screen (the notch on MacBooks that have one) and they go onto the shelf. It glows purple while you drag files. Shake Settings can turn it off or move it to the left or right screen edge.
 - Click the menu bar icon for **Show Shelf**, **Clear Shelf**, **Shake Settings…**, and **Quit**.
 - Shake Settings edits the drop zone and how hard you need to shake: the distance of each stroke, how many direction changes, the time window they must fit in, and a cooldown between shelves. Changes apply as soon as you save. The values live in `~/Library/Application Support/ShakeThat/settings.json`, which you can also edit by hand; reopen Shake Settings (or relaunch) to pick up hand edits.
+- **Launch at login** in Shake Settings opens ShakeThat when you log in. It's off by default, isn't stored in `settings.json`, and also shows up in **System Settings → General → Login Items**. It only works from the built `ShakeThat.app`, not `swift run`.
 - Drag the shelf by its edge to move it. Dragging the file cards drags the files out.
 - The x button clears the shelf and hides it. It never deletes files; the shelf only holds references.
 - Click the ... button in the shelf's corner, or right-click (or Control-click) the shelf, for one menu that acts on all of its files: **Share** (AirDrop, Mail, Messages, ...), **Copy Path**, **Reveal in Finder**, **Compress** to a zip, and **Move to Folder…**. When there are images on the shelf, **Convert** them to PNG, JPEG, HEIC or TIFF, or **Resize** them to 75%, 50% or 25%. New files are saved next to the originals and never overwrite anything. A zip or converted images take the originals' place on the shelf, and the previous shelf goes into Recent Shelves. Everything runs locally.
@@ -64,7 +65,6 @@ Run the tests with `swift test`.
 
 ## Roadmap ideas
 
-- Launch at login
 - Dragging out a single file instead of the whole stack
 - Multiple shelves, Quick Look, and a keyboard shortcut to open a shelf
 
