@@ -24,6 +24,10 @@ extension URL {
     var isImage: Bool {
         contentType?.conforms(to: .image) ?? false
     }
+
+    var isPDF: Bool {
+        contentType?.conforms(to: .pdf) ?? false
+    }
 }
 
 extension NSScreen {
