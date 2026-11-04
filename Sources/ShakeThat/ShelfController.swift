@@ -72,7 +72,7 @@ final class ShelfController {
     }
 
     private func makePanel() -> NSPanel {
-        let panel = NSPanel(overlayWithContentRect: shelfView.frame)
+        let panel = ShelfPanel(overlayWithContentRect: shelfView.frame)
         panel.collectionBehavior = [.canJoinAllSpaces, .fullScreenAuxiliary]
 
         let background = NSVisualEffectView(frame: shelfView.frame)
@@ -88,5 +88,13 @@ final class ShelfController {
         background.addSubview(shelfView)
         panel.contentView = background
         return panel
+    }
+}
+
+/// The shelf's panel. Borderless panels can't take the keyboard by default,
+/// but the shelf needs it for the spacebar (Quick Look).
+private final class ShelfPanel: NSPanel {
+    override var canBecomeKey: Bool {
+        true
     }
 }
