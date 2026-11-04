@@ -2,6 +2,7 @@ import Foundation
 import ShakeCore
 
 /// The last few shelves that were cleared, kept across relaunches.
+/// Pinned shelves are kept too, outside the limit, until they're unpinned, removed or their files are gone.
 ///
 /// Files are remembered as bookmarks, not copies, so a file that was moved
 /// (for example by dragging it off the shelf into a folder) is found in its new place.
@@ -12,6 +13,23 @@ final class ShelfHistory {
         var bookmarks: [Data]
         /// File names at the time the shelf was cleared, for the menu.
         var names: [String]
+        var isPinned = false
+
+        init(date: Date, bookmarks: [Data], names: [String], isPinned: Bool) {
+            self.date = date
+            self.bookmarks = bookmarks
+            self.names = names
+            self.isPinned = isPinned
+        }
+
+        // Entries saved before pinning existed have no isPinned.
+        init(from decoder: Decoder) throws {
+            let container = try decoder.container(keyedBy: CodingKeys.self)
+            date = try container.decode(Date.self, forKey: .date)
+            bookmarks = try container.decode([Data].self, forKey: .bookmarks)
+            names = try container.decode([String].self, forKey: .names)
+            isPinned = try container.decodeIfPresent(Bool.self, forKey: .isPinned) ?? false
+        }
     }
 
     private static let defaultsKey = "ShelfHistory"
@@ -23,7 +41,8 @@ final class ShelfHistory {
         self.defaults = defaults
         if let data = defaults.data(forKey: Self.defaultsKey),
            let saved = try? JSONDecoder().decode([Entry].self, from: data) {
-            entries = Array(saved.prefix(Self.limit))
+            entries = saved
+            trim()
         }
     }
 
@@ -36,13 +55,19 @@ final class ShelfHistory {
         try? url.bookmarkData(options: [], includingResourceValuesForKeys: nil, relativeTo: nil)
     }
 
-    /// Adds a shelf to the top of the history, dropping the oldest beyond the limit.
-    func record(bookmarks: [Data], names: [String]) {
+    /// Adds a shelf to the top of the history, dropping the oldest unpinned ones beyond the limit.
+    func record(bookmarks: [Data], names: [String], isPinned: Bool = false) {
         guard !bookmarks.isEmpty else { return }
-        entries.insert(Entry(date: Date(), bookmarks: bookmarks, names: names), at: 0)
-        let limit = Self.limit
-        if entries.count > limit { entries.removeLast(entries.count - limit) }
+        entries.insert(Entry(date: Date(), bookmarks: bookmarks, names: names, isPinned: isPinned), at: 0)
+        trim()
         save()
+    }
+
+    /// Forgets pinned shelves whose files are all gone. Unpinned ones stay, greyed out, until they age out.
+    func removeMissingPinned() {
+        let before = entries.count
+        entries.removeAll { $0.isPinned && existingFiles(of: $0).isEmpty }
+        if entries.count != before { save() }
     }
 
     func remove(at index: Int) {
@@ -62,6 +87,17 @@ final class ShelfHistory {
                 bookmarkDataIsStale: &isStale
             ) else { return nil }
             return FileManager.default.fileExists(atPath: url.path) ? url : nil
+        }
+    }
+
+    /// Pinned shelves don't count toward the limit.
+    private func trim() {
+        var unpinned = 0
+        let limit = Self.limit
+        entries.removeAll { entry in
+            guard !entry.isPinned else { return false }
+            unpinned += 1
+            return unpinned > limit
         }
     }
 
